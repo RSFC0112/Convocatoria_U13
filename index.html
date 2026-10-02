@@ -1040,6 +1040,70 @@
             text-align: center;
         }
 
+        .no-convocados-exportacion {
+            display: none;
+            position: relative;
+            z-index: 2;
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(207, 168, 88, 0.42);
+        }
+
+        .no-convocados-exportacion h3 {
+            margin: 0 0 12px;
+            color: var(--dorado);
+            font-size: 18px;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        .lista-no-convocados {
+            display: grid;
+            gap: 8px;
+        }
+
+        .tarjeta-no-convocado {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            min-width: 0;
+            padding: 6px 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            background: rgba(30, 30, 30, 0.88);
+        }
+
+        .tarjeta-no-convocado .convocado-foto {
+            width: 30px;
+            height: 30px;
+        }
+
+        .no-convocado-info {
+            min-width: 0;
+        }
+
+        .no-convocado-info .convocado-nombre {
+            font-size: 13px;
+            text-align: left;
+        }
+
+        .no-convocado-info .convocado-meta {
+            font-size: 10px;
+            text-align: left;
+        }
+
+        .no-convocado-estado {
+            display: inline-block;
+            margin-top: 4px;
+            padding: 2px 6px;
+            border: 1px solid rgba(248, 113, 113, 0.45);
+            border-radius: 3px;
+            color: #fca5a5;
+            font-size: 9px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
         .lista-convocados-wrapper {
             position: relative;
             min-height: 160px;
@@ -1185,6 +1249,13 @@
             -webkit-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
+        }
+
+        .convocado-meta {
+            color: var(--gris-texto);
+            font-size: 12px;
+            line-height: 1.2;
+            margin-top: 2px;
         }
 
         .acciones-lienzo {
@@ -1905,6 +1976,10 @@
                         <span data-posicion="OFE">OFE: 0</span>
                     </div>
                 </div>
+                <section class="no-convocados-exportacion" id="seccion-no-convocados" aria-label="No convocados">
+                    <h3>No convocados</h3>
+                    <div class="lista-no-convocados" id="lista-no-convocados"></div>
+                </section>
             </div>
             <div class="acciones-lienzo">
                 <button class="btn-descargar" id="btn-descargar" type="button" onclick="descargarConvocatoriaPNG()" disabled>Descargar PNG</button>
@@ -2088,6 +2163,7 @@
         const panelPlantilla = document.querySelector('.panel-plantilla');
         const contDisponibles = document.getElementById('lista-disponibles');
         const contSeleccionados = document.getElementById('lista-seleccionados');
+        const contNoConvocados = document.getElementById('lista-no-convocados');
         const resumenPosicionesConvocados = document.getElementById('resumen-posiciones-convocados');
         const lienzoPrincipal = document.getElementById('lienzo');
         const botonDescargar = document.getElementById('btn-descargar');
@@ -2296,16 +2372,17 @@
 
                         return ['D', 'L', 'M', 'K', 'J', 'V', 'S'][fecha.getDay()] || '-';
                     };
-                    const formatoSiNo = valor => {
+                    const formatoAsistencia = valor => {
                         if ([1, '1', '1.0'].includes(valor)) return 'SI';
                         if ([0, '0', '0.0'].includes(valor)) return 'NO';
+                        if ([0.5, '0.5'].includes(valor)) return 'PARCIAL';
                         return 'NA';
                     };
 
                     if (ultimasFechas.length > 0) {
                         const filas = [];
                         ultimasFechas.forEach(item => {
-                            const asistenciaTexto = formatoSiNo(item?.asistio);
+                            const asistenciaTexto = formatoAsistencia(item?.asistio);
                             const celdaDia = document.createElement('span');
                             const celdaFecha = document.createElement('span');
                             const celdaAsistencia = document.createElement('span');
@@ -2318,6 +2395,7 @@
                             celdaAsistencia.style.fontWeight = '800';
                             let colorTexto = '#4ade80';
                             if (asistenciaTexto === 'NO') colorTexto = '#f87171';
+                            if (asistenciaTexto === 'PARCIAL') colorTexto = 'var(--dorado)';
                             if (asistenciaTexto === 'NA') colorTexto = '#ffffff';
                             celdaAsistencia.style.color = colorTexto;
 
@@ -2555,15 +2633,59 @@
             modalInvitados.classList.remove('abierto');
         }
 
+        function renderizarNoConvocados(idsBloqueados) {
+            const jugadoresNoConvocados = baseDeDatosJugadores
+                .filter(jugador => !convocadosIds.includes(jugador.id))
+                .sort(compararJugadores);
+
+            contNoConvocados.replaceChildren(...jugadoresNoConvocados.map(jugador => {
+                const tarjeta = document.createElement('div');
+                tarjeta.className = 'tarjeta-no-convocado';
+
+                const foto = document.createElement('div');
+                foto.className = `convocado-foto${jugador.foto ? '' : ' sin-foto'}`;
+                if (jugador.foto) {
+                    const imagen = document.createElement('img');
+                    imagen.src = jugador.foto;
+                    imagen.alt = '';
+                    imagen.onerror = () => {
+                        foto.classList.add('sin-foto');
+                        imagen.remove();
+                    };
+                    foto.appendChild(imagen);
+                }
+
+                const informacion = document.createElement('div');
+                informacion.className = 'no-convocado-info';
+                const nombre = document.createElement('div');
+                nombre.className = 'convocado-nombre';
+                nombre.textContent = jugador.nombre;
+                const detalles = document.createElement('div');
+                detalles.className = 'convocado-meta';
+                detalles.textContent = `${jugador.posicion} | ${obtenerTextoDorsal(jugador)} | ${jugador.anioNacimiento}`;
+                informacion.append(nombre, detalles);
+                if (idsBloqueados.includes(jugador.id)) {
+                    const estado = document.createElement('span');
+                    estado.className = 'no-convocado-estado';
+                    estado.textContent = 'No disponible';
+                    informacion.appendChild(estado);
+                }
+                tarjeta.append(foto, informacion);
+                return tarjeta;
+            }));
+        }
+
         function renderizarListas() {
             contDisponibles.innerHTML = '';
             contSeleccionados.innerHTML = '';
+            contNoConvocados.replaceChildren();
             const contadorDisponibles = document.getElementById('contador-disponibles');
             const torneoSeleccionado = hayTorneoSeleccionado();
             panelPlantilla.classList.toggle('torneo-seleccionado', torneoSeleccionado);
 
             if (!torneoSeleccionado) {
                 convocadosIds = [];
+                contNoConvocados.replaceChildren();
                 contadorDisponibles.innerText = '0';
                 actualizarResumenPosicionesConvocados([]);
                 actualizarContador();
@@ -2626,11 +2748,13 @@
             jugadoresConvocados.forEach(jugador => {
                 const div = document.createElement('div');
                 div.className = 'jugador-convocado';
+                const textoDorsal = obtenerTextoDorsal(jugador);
                 div.innerHTML = `
                     <div class="convocado-foto${jugador.foto ? '' : ' sin-foto'}" aria-label="Foto de ${jugador.nombre}">
                         ${jugador.foto ? `<img src="${jugador.foto}" alt="Foto de ${jugador.nombre}" onerror="this.parentElement.classList.add('sin-foto');this.remove()">` : ''}
                     </div>
                     <div class="convocado-nombre" title="${jugador.nombre}">${jugador.nombre}</div>
+                    <div class="convocado-meta">${jugador.posicion} | ${textoDorsal} | ${jugador.anioNacimiento}</div>
                 `;
                 hacerFotoInteractiva(div.querySelector('.convocado-foto'), jugador);
                 div.title = 'Toca para quitar de la convocatoria';
@@ -2638,6 +2762,7 @@
                 contSeleccionados.appendChild(div);
             });
 
+            renderizarNoConvocados(idsBloqueados);
             actualizarResumenPosicionesConvocados(jugadoresConvocados);
             actualizarContador();
         }
@@ -2895,7 +3020,7 @@
                             listaClonada.querySelectorAll('.jugador-convocado').forEach(tarjeta => {
                                 tarjeta.style.setProperty('display', 'grid', 'important');
                                 tarjeta.style.setProperty('grid-template-columns', '36px minmax(0, 1fr)', 'important');
-                                tarjeta.style.setProperty('grid-template-rows', 'auto', 'important');
+                                tarjeta.style.setProperty('grid-template-rows', 'auto auto', 'important');
                                 tarjeta.style.setProperty('align-items', 'center', 'important');
                                 tarjeta.style.setProperty('column-gap', '10px', 'important');
                                 tarjeta.style.setProperty('min-height', '54px', 'important');
@@ -2904,14 +3029,29 @@
 
                                 const foto = tarjeta.querySelector('.convocado-foto');
                                 const nombre = tarjeta.querySelector('.convocado-nombre');
+                                const meta = tarjeta.querySelector('.convocado-meta');
                                 if (foto) {
-                                    foto.style.setProperty('grid-row', '1', 'important');
+                                    foto.style.setProperty('grid-row', '1 / span 2', 'important');
                                 }
                                 if (nombre) {
                                     nombre.style.setProperty('grid-column', '2', 'important');
                                     nombre.style.setProperty('grid-row', '1', 'important');
                                 }
+                                if (meta) {
+                                    meta.style.setProperty('grid-column', '2', 'important');
+                                    meta.style.setProperty('grid-row', '2', 'important');
+                                }
                             });
+                        }
+
+                        const seccionNoConvocadosClonada = documentoClonado.getElementById('seccion-no-convocados');
+                        const noConvocadosClonados = documentoClonado.getElementById('lista-no-convocados');
+                        if (seccionNoConvocadosClonada) {
+                            seccionNoConvocadosClonada.style.setProperty('display', 'block', 'important');
+                        }
+                        if (noConvocadosClonados) {
+                            noConvocadosClonados.style.setProperty('grid-template-columns', 'repeat(3, minmax(0, 1fr))', 'important');
+                            noConvocadosClonados.style.setProperty('gap', '8px', 'important');
                         }
 
                         const contadorClonado = documentoClonado.getElementById('contador-exportacion');
