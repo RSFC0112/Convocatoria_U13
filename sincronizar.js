@@ -14,12 +14,12 @@ const normalizarNombre = nombre => String(nombre || '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, ' ')
     .trim();
-const posicionesPorNombre = new Map(
-    Array.from(htmlIndex.matchAll(/\{\s*id:\s*\d+,[^\r\n]*?\bnombre:\s*"([^"]+)",\s*posicion:\s*"([^"]+)"/g),
-        ([, nombre, posicion]) => [normalizarNombre(nombre), posicion])
+const jugadoresPorNombre = new Map(
+    Array.from(htmlIndex.matchAll(/\{\s*id:\s*(\d+),[^\r\n]*?\bnombre:\s*"([^"]+)",\s*posicion:\s*"([^"]+)"/g),
+        ([, id, nombre, posicion]) => [normalizarNombre(nombre), { id: Number(id), posicion }])
 );
 
-if (posicionesPorNombre.size === 0) {
+if (jugadoresPorNombre.size === 0) {
     throw new Error('No se encontraron posiciones de jugadores en index.html.');
 }
 
@@ -173,7 +173,7 @@ async function sincronizarU13() {
                 const fila = filas[rowIdx];
                 return `${String(fila[indiceNombre]).trim()} ${String(fila[indiceApellido1] || '').trim()}`.trim();
             })
-            .filter(nombre => !posicionesPorNombre.has(normalizarNombre(nombre)));
+            .filter(nombre => !jugadoresPorNombre.has(normalizarNombre(nombre)));
         if (jugadoresSinPosicion.length > 0) {
             console.error(`Error: No se encontró posición en index.html para: ${jugadoresSinPosicion.join(', ')}.`);
             return;
@@ -184,15 +184,27 @@ async function sincronizarU13() {
             return;
         }
 
+        const encabezadosSeccion = filas[3] || [];
+        const indiceAsistencia = encabezadosSeccion.findIndex(valor =>
+            normalizarEncabezado(valor) === 'asistencia 2026'
+        );
+        const indiceConvocatorias = encabezadosSeccion.findIndex(valor =>
+            normalizarEncabezado(valor) === 'convocatorias 2026'
+        );
+        if (indiceAsistencia === -1 || indiceConvocatorias <= indiceAsistencia) {
+            console.error('Error: No se encontraron los encabezados de asistencia y convocatorias.');
+            return;
+        }
+
         const columnasEntrenamientos = [];
-        for (let idx = 23; idx < 87; idx++) {
+        for (let idx = indiceAsistencia + 1; idx < indiceConvocatorias; idx++) {
             const fecha = parsearFechaExcel(filaFechas[idx]);
             if (fecha) columnasEntrenamientos.push({ colIndex: idx, fecha });
         }
         columnasEntrenamientos.sort((a, b) => a.fecha - b.fecha);
 
         const columnasPartidos = [];
-        for (let idx = 88; idx < 144; idx++) {
+        for (let idx = indiceConvocatorias + 1; idx < filaFechas.length; idx++) {
             const fecha = parsearFechaExcel(filaFechas[idx]);
             if (fecha) columnasPartidos.push({ colIndex: idx, fecha });
         }
@@ -203,11 +215,6 @@ async function sincronizarU13() {
             const numero = Number(valor);
             return [0, 0.5, 1].includes(numero) ? numero : null;
         };
-        const entrenamientosDivision = columnasEntrenamientos.filter(item =>
-            indicesU13.some(rowIdx =>
-                obtenerMarcaEntrenamiento(filas[rowIdx][item.colIndex]) !== null
-            )
-        );
         const obtenerMarcaPartido = valor => {
             const marca = String(valor ?? '').trim().toUpperCase();
             return ['X', 'P(X)', '1', '1.0'].includes(marca) ? marca : null;
@@ -260,42 +267,57 @@ async function sincronizarU13() {
             const textoEntrenamientos = `${entrenamientosAsistidos}/${totalEntrenamientos}`;
             const textoPartidos = `${partidosAsistidos}/${totalPartidos}`;
 
-            const entrenamientosParaUltimasFechas = entrenamientosDelJugador.length <= 5
-                ? entrenamientosDivision.slice(-5)
-                : entrenamientosDelJugador.slice(-5);
+            const entrenamientosParaUltimasFechas = entrenamientosDelJugador.slice(-5);
             const ultimasFechasData = entrenamientosParaUltimasFechas.map(item => {
                 const dia = String(item.fecha.getUTCDate()).padStart(2, '0');
                 const mes = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'][item.fecha.getUTCMonth()];
-                const noEstabaInscrito = fechaInscripcion && item.fecha < fechaInscripcion;
                 const marca = obtenerMarcaEntrenamiento(fila[item.colIndex]);
-                const asistio = noEstabaInscrito ? 'NA' : marca === 1 ? '1' : '0';
 
                 return {
                     fecha: `${dia}-${mes}`,
-                    asistio
+                    asistio: marca
                 };
             });
+            while (ultimasFechasData.length < 5) {
+                ultimasFechasData.unshift({ fecha: 'NA', asistio: 'NA' });
+            }
 
             const fechaInscripcionLimpia = formatearFechaDDMMYYYY(fila[indiceFechaInscripcion]);
-            const idJugador = Number(fila[1]) || contadorU13;
+            const jugadorPlantilla = jugadoresPorNombre.get(normalizarNombre(nombreCompleto));
             const valorDorsal = fila[indiceDorsal];
             const dorsal = valorDorsal !== undefined && valorDorsal !== null && String(valorDorsal).trim() !== ''
                 && Number.isFinite(Number(valorDorsal)) ? Number(valorDorsal) : null;
             const fechaNacimiento = parsearFechaExcel(fila[indiceFechaNacimiento]);
 
             const datosJugador = {
-                id_jugador: idJugador,
+                id_jugador: jugadorPlantilla.id,
                 nombre: nombreCompleto,
                 entrenamientos: textoEntrenamientos,
                 partidos: textoPartidos,
                 fecha_inscripcion: fechaInscripcionLimpia,
                 ultimas_fechas: ultimasFechasData,
                 dorsal,
-                posicion: posicionesPorNombre.get(normalizarNombre(nombreCompleto)),
+                posicion: jugadorPlantilla.posicion,
                 anio_nacimiento: fechaNacimiento ? fechaNacimiento.getUTCFullYear() : null
             };
 
-            const { error } = await supabase.from('Estadísticas_U13').upsert(datosJugador, { onConflict: 'id_jugador' });
+            const tablaEstadisticas = supabase.from('Estadísticas_U13');
+            const { data: registrosExistentes, error: errorConsulta } = await tablaEstadisticas
+                .select('id_jugador')
+                .eq('nombre', nombreCompleto);
+
+            if (errorConsulta) {
+                console.error(`  -> Error al consultar ${datosJugador.nombre}:`, errorConsulta.message);
+                continue;
+            }
+            if (registrosExistentes.length > 1) {
+                console.error(`  -> Error: hay varios registros para ${datosJugador.nombre}; no se modificaron.`);
+                continue;
+            }
+
+            const { error } = registrosExistentes.length === 1
+                ? await tablaEstadisticas.update(datosJugador).eq('nombre', nombreCompleto)
+                : await tablaEstadisticas.upsert(datosJugador, { onConflict: 'id_jugador' });
 
             if (error) {
                 console.error(`  -> Error al subir a ${datosJugador.nombre}:`, error.message);
