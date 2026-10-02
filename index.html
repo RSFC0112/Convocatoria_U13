@@ -1,0 +1,2979 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1100">
+    <title>Convocatorias U13 - Real Sevilla FC</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Monoton&family=Montserrat:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-negro-fondo: #0a0a0a;
+            --color-negro-tarjeta: #121212;
+            --color-crema: #fdf5df;
+            --color-filtro-superior: #f5f4f2;
+            --color-crema-oscuro: #cfa858;
+            --color-texto-secundario: #888378;
+            --dorado-mudo: #8c7335;
+            --negro-elevado: #1e1e1e;
+            --brillo-dorado: rgba(207, 168, 88, 0.15);
+            --brillo-dorado-fuerte: rgba(207, 168, 88, 0.4);
+            --fuente-principal: 'Montserrat', sans-serif;
+            --fuente-numeros: 'Monoton', cursive;
+
+            --bg-oscuro: var(--color-negro-fondo);
+            --bg-panel: var(--color-negro-tarjeta);
+            --dorado: var(--color-crema-oscuro);
+            --gris-texto: var(--color-texto-secundario);
+            --crema: var(--color-crema);
+            --alto-lienzo-convocatoria: 400px;
+            --silueta-jugador: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23888378"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>');
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        html {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        html::-webkit-scrollbar {
+            display: none;
+        }
+
+        body {
+            font-family: var(--fuente-principal);
+            background: radial-gradient(circle at top, #1a1a1a 0%, var(--color-negro-fondo) 100%);
+            color: var(--color-crema);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        #scroll-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 0%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--color-crema-oscuro), #fff);
+            z-index: 2000;
+            box-shadow: 0 0 10px rgba(207, 168, 88, 0.5);
+        }
+
+        .header-app {
+            text-align: center;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        .header-app h1 {
+            font-size: clamp(1.8rem, 8vw, 4.0rem);
+            text-transform: uppercase;
+            font-weight: 800;
+            background: linear-gradient(to right, #f5f4f2 20%, #cfa858 40%, #cfa858 60%, #f5f4f2 80%);
+            background-size: 200% auto;
+            color: transparent;
+            -webkit-background-clip: text;
+            background-clip: text;
+            animation: brilloMetalico 6s linear infinite;
+            line-height: 1.1;
+            text-shadow: 0 10px 30px rgba(207, 168, 88, 0.2);
+            margin: 0 0 6px 0;
+        }
+
+        .header-subtitulo {
+            margin: 0 0 20px;
+            color: #d8cba9;
+            font-size: 20px;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+
+        @keyframes brilloMetalico {
+            to { background-position: 200% center; }
+        }
+
+        .controles-superiores {
+            display: flex;
+            gap: 44px;
+            justify-content: space-between;
+            align-items: center;
+            background-color: rgba(10, 10, 10, 0.7);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            padding: 12px 8%;
+            width: 100%;
+            max-width: 1200px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            border-radius: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+            margin-top: 15px;
+        }
+
+        .control-grupo {
+            flex: 0 1 360px;
+        }
+
+        .controles-superiores select,
+        .controles-superiores input {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: var(--color-crema);
+            border: 1px solid rgba(207, 168, 88, 0.3);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: 800;
+            font-size: 0.85rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+            font-family: var(--fuente-principal);
+            outline: none;
+        }
+
+        .controles-superiores select:hover,
+        .controles-superiores input:hover {
+            border-color: var(--color-crema);
+            box-shadow: 0 0 10px rgba(207, 168, 88, 0.2);
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .control-grupo {
+            min-width: 220px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: linear-gradient(140deg, #191919 0%, #101010 100%);
+            border: 1px solid #2f2b25;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+        }
+
+        .control-grupo label {
+            color: #b0a897;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        select, input[type="number"] {
+            width: 100%;
+            background: linear-gradient(180deg, #111 0%, #0a0a0a 100%);
+            color: var(--crema);
+            border: 1px solid #4a4439;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            outline: none;
+            box-sizing: border-box;
+            transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+        }
+
+        select:focus, input[type="number"]:focus {
+            border-color: var(--dorado);
+            box-shadow: 0 0 0 3px rgba(207, 168, 88, 0.2);
+            transform: translateY(-1px);
+        }
+
+        select {
+            appearance: none;
+            background-image:
+                linear-gradient(45deg, transparent 50%, #b8ab92 50%),
+                linear-gradient(135deg, #b8ab92 50%, transparent 50%);
+            background-position:
+                calc(100% - 18px) calc(50% - 3px),
+                calc(100% - 12px) calc(50% - 3px);
+            background-size: 6px 6px, 6px 6px;
+            background-repeat: no-repeat;
+            padding-right: 34px;
+            color-scheme: dark;
+        }
+
+        select option {
+            background-color: #000;
+            color: var(--crema);
+        }
+
+        .selector-torneo {
+            position: relative;
+            z-index: 2;
+        }
+
+        .selector-torneo-nativo {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        .selector-torneo-trigger {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            width: 100%;
+            min-height: 48px;
+            padding: 10px 13px;
+            color: var(--color-crema);
+            text-align: left;
+            font: 700 14px var(--fuente-principal);
+            background: linear-gradient(120deg, #1c1a15 0%, #111 65%, #0b0b0b 100%);
+            border: 1px solid rgba(207, 168, 88, 0.46);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+        }
+
+        .selector-torneo-trigger:hover,
+        .selector-torneo-trigger:focus-visible,
+        .selector-torneo.abierto .selector-torneo-trigger {
+            border-color: var(--color-crema-oscuro);
+            box-shadow: 0 0 0 3px rgba(207, 168, 88, 0.12), 0 8px 22px rgba(0, 0, 0, 0.35);
+            outline: none;
+        }
+
+        .selector-torneo-trigger-texto {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .selector-torneo-flecha {
+            flex: 0 0 9px;
+            width: 9px;
+            height: 9px;
+            margin: -5px 3px 0 0;
+            border-right: 2px solid var(--color-crema-oscuro);
+            border-bottom: 2px solid var(--color-crema-oscuro);
+            transform: rotate(45deg);
+            transition: transform 200ms ease, margin 200ms ease;
+        }
+
+        .selector-torneo.abierto .selector-torneo-flecha {
+            margin-top: 5px;
+            transform: rotate(225deg);
+        }
+
+        .selector-torneo-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            z-index: 1100;
+            display: grid;
+            gap: 5px;
+            width: 100%;
+            padding: 7px;
+            background: linear-gradient(145deg, #1b1914 0%, #10100f 48%, #090909 100%);
+            border: 1px solid rgba(207, 168, 88, 0.52);
+            border-radius: 9px;
+            box-shadow: 0 16px 35px rgba(0, 0, 0, 0.72), 0 0 22px rgba(207, 168, 88, 0.1);
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transform: translateY(-8px) scale(0.985);
+            transform-origin: top center;
+            transition: opacity 170ms ease, transform 200ms ease, visibility 200ms;
+        }
+
+        .selector-torneo.abierto .selector-torneo-menu {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transform: translateY(0) scale(1);
+        }
+
+        .selector-torneo-opcion {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            width: 100%;
+            min-height: 52px;
+            padding: 8px 11px;
+            color: var(--color-crema);
+            text-align: left;
+            font-family: var(--fuente-principal);
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 150ms ease, border-color 150ms ease, transform 150ms ease;
+        }
+
+        .selector-torneo-opcion:hover,
+        .selector-torneo-opcion:focus-visible {
+            background: rgba(207, 168, 88, 0.1);
+            border-color: rgba(207, 168, 88, 0.28);
+            outline: none;
+            transform: translateX(2px);
+        }
+
+        .selector-torneo-opcion[aria-selected="true"] {
+            background: rgba(207, 168, 88, 0.13);
+            border-color: rgba(207, 168, 88, 0.3);
+        }
+
+        .selector-torneo-opcion-nombre {
+            font-size: 13px;
+            font-weight: 800;
+        }
+
+        .selector-torneo-opcion-detalle {
+            color: #b09a6c;
+            font-size: 9px;
+            font-weight: 700;
+            text-align: right;
+            text-transform: uppercase;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .selector-torneo-trigger,
+            .selector-torneo-flecha,
+            .selector-torneo-menu,
+            .selector-torneo-opcion {
+                transition: none;
+            }
+        }
+
+        input[type="number"] {
+            text-align: center;
+            appearance: textfield;
+            -moz-appearance: textfield;
+        }
+
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            appearance: none;
+            margin: 0;
+            display: none;
+        }
+
+        .contenedor-principal {
+            display: flex;
+            gap: 30px;
+            width: 100%;
+            max-width: 1100px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+            align-items: flex-start;
+        }
+
+        /* Panel Izquierdo: Cartas de Jugadores */
+        .panel-plantilla {
+            flex: 1.5;
+            min-width: 400px;
+            height: auto;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--bg-panel);
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid #333;
+        }
+
+        .panel-plantilla.torneo-seleccionado {
+            height: 710px;
+        }
+
+        .panel-plantilla:not(.torneo-seleccionado) .caja-jugadores {
+            display: none;
+        }
+
+        .panel-plantilla h3 {
+            color: var(--gris-texto);
+            margin-top: 0;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+        }
+
+        .caja-jugadores {
+            display: flex;
+            flex: 1;
+            min-height: 0;
+            background: linear-gradient(145deg, #151515 0%, #0e0e0e 100%);
+            border: 1px solid #2e2e2e;
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .grid-jugadores {
+            display: grid;
+            flex: 1;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 15px;
+            padding: 10px 5px;
+            min-height: 0;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #cfa858 #121212;
+        }
+
+        .grid-jugadores::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .grid-jugadores::-webkit-scrollbar-track {
+            background: #121212;
+            border-radius: 999px;
+        }
+
+        .grid-jugadores::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #e1c27a 0%, #cfa858 55%, #a17d3d 100%);
+            border-radius: 999px;
+            border: 2px solid #121212;
+        }
+
+        .grid-jugadores::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #edd491 0%, #d9b56a 55%, #b58d46 100%);
+        }
+
+        /* DISEÑO DE LA CARTA (ESTILO MUNDIAL/FIFA) */
+        .carta-jugador {
+            isolation: isolate;
+            overflow: hidden;
+            min-height: 160px;
+            background:
+                radial-gradient(ellipse at 50% 30%, rgba(207, 168, 88, 0.12), transparent 54%),
+                linear-gradient(145deg, #1d1c18 0%, #141413 48%, #0d0d0c 100%);
+            border: 1px solid rgba(207, 168, 88, 0.2);
+            border-left: 4px solid var(--dorado-mudo);
+            border-radius: 12px;
+            padding: 15px 10px 10px 10px;
+            position: relative;
+            cursor: pointer;
+            transition: transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1), border-color 240ms ease, box-shadow 240ms ease, background-color 240ms ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 7px 18px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.045);
+            opacity: 0;
+            animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .carta-jugador::before {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            border-radius: inherit;
+            background: linear-gradient(112deg, transparent 18%, rgba(255, 245, 215, 0.1) 48%, transparent 68%);
+            content: '';
+            pointer-events: none;
+            transform: translateX(-125%);
+            transition: transform 650ms cubic-bezier(0.2, 0.7, 0.2, 1);
+        }
+
+        .carta-jugador > .carta-foto,
+        .carta-jugador > .carta-nombre,
+        .carta-jugador > .carta-anio {
+            position: relative;
+            z-index: 1;
+        }
+
+        .carta-jugador > .carta-posicion,
+        .carta-jugador > .carta-dorsal {
+            z-index: 2;
+        }
+
+        .boton-eliminar-invitado {
+            position: absolute;
+            top: 29px;
+            left: 8px;
+            z-index: 4;
+            display: grid;
+            place-items: center;
+            width: 34px;
+            height: 24px;
+            padding: 0;
+            border: 0;
+            border-radius: 0;
+            background: transparent;
+            color: #ff1744;
+            font: 900 25px/1 var(--fuente-principal);
+            text-shadow: 0 0 3px #ff1744, 0 0 8px #ff1744, 0 0 16px rgba(255, 23, 68, 0.85);
+            cursor: pointer;
+        }
+
+        .boton-eliminar-invitado:hover {
+            color: #ff637e;
+            text-shadow: 0 0 4px #ff1744, 0 0 12px #ff1744, 0 0 22px rgba(255, 23, 68, 0.95);
+            transform: scale(1.12);
+        }
+
+        .boton-eliminar-invitado:focus-visible {
+            outline: 2px solid #ff1744;
+            outline-offset: 2px;
+        }
+
+        .carta-jugador:hover {
+            border-color: rgba(230, 199, 127, 0.48);
+            border-left-color: var(--color-crema-oscuro);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.56), 0 0 18px rgba(207, 168, 88, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+            transform: translateY(-3px);
+            cursor: pointer;
+        }
+
+        .carta-jugador:hover::before {
+            transform: translateX(125%);
+        }
+
+        .jugador-item,
+        .panel-jugadores .elemento-lista {
+            background: #0f0f0f;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease, border-color 0.4s ease;
+            opacity: 0;
+            animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .jugador-item:hover,
+        .panel-jugadores .elemento-lista:hover {
+            transform: translateY(-4px);
+            border-color: rgba(207, 168, 88, 0.2);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8), 0 0 15px rgba(207, 168, 88, 0.15);
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(30px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .carta-jugador.bloqueado {
+            border-color: #7a7a7a;
+            opacity: 0.65;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.45);
+            background: linear-gradient(135deg, #222 0%, #111 100%);
+        }
+
+        .carta-jugador.bloqueado:hover {
+            transform: none;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.45);
+            background: linear-gradient(135deg, #222 0%, #111 100%);
+        }
+
+        .carta-jugador.bloqueado::before {
+            display: none;
+        }
+
+        .carta-posicion {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            padding: 3px 6px;
+            border: 1px solid rgba(230, 199, 127, 0.38);
+            border-radius: 6px;
+            background: rgba(10, 10, 10, 0.72);
+            color: #e6c77f;
+            font-size: 10px;
+            font-weight: 900;
+            line-height: 1;
+            box-shadow: 0 3px 9px rgba(0, 0, 0, 0.3);
+        }
+
+        .carta-dorsal {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            min-width: 32px;
+            padding: 3px 7px;
+            border: 1px solid rgba(230, 199, 127, 0.62);
+            border-radius: 999px;
+            background: linear-gradient(145deg, rgba(30, 28, 22, 0.96), rgba(8, 8, 8, 0.94));
+            color: #f0d48d;
+            font-size: 12px;
+            font-weight: 900;
+            line-height: 1.2;
+            text-align: center;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 3px 9px rgba(0, 0, 0, 0.36);
+        }
+
+        .carta-bloqueado {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            font-size: 10px;
+            font-weight: 800;
+            color: #ffb3b3;
+            background-color: rgba(160, 0, 0, 0.42);
+            border: 1px solid rgba(255, 140, 140, 0.45);
+            border-radius: 999px;
+            padding: 2px 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            z-index: 3;
+            pointer-events: none;
+        }
+
+        .carta-jugador.bloqueado .carta-dorsal {
+            top: 8px;
+            z-index: 1;
+        }
+
+        .carta-foto {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background-color: #000;
+            border: 2px solid rgba(230, 199, 127, 0.76);
+            margin-bottom: 10px;
+            background-size: 70% 70%;
+            background-position: center;
+            background-repeat: no-repeat;
+            overflow: hidden;
+            box-shadow: 0 0 0 4px rgba(207, 168, 88, 0.08), 0 5px 14px rgba(0, 0, 0, 0.48), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+            transition: transform 240ms ease, border-color 240ms ease, box-shadow 240ms ease;
+        }
+
+        .carta-jugador:hover .carta-foto {
+            transform: scale(1.045);
+            border-color: #f0d48d;
+            box-shadow: 0 0 0 4px rgba(207, 168, 88, 0.14), 0 7px 18px rgba(0, 0, 0, 0.56), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+        }
+
+        .carta-foto.sin-foto {
+            background-image: var(--silueta-jugador);
+        }
+
+        .carta-jugador.carta-anadir {
+            justify-content: center;
+            background: linear-gradient(145deg, #191919 0%, #101010 100%);
+            border-left-color: rgba(230, 199, 127, 0.55);
+        }
+
+        .carta-foto-anadir {
+            display: grid;
+            place-items: center;
+            border: 2px dotted #d0b36c;
+            background: rgba(207, 168, 88, 0.045);
+            color: #e6c77f;
+            font-size: 27px;
+            font-weight: 400;
+            box-shadow: none;
+        }
+
+        .carta-jugador.carta-anadir:hover .carta-foto-anadir {
+            border-color: #f0d48d;
+            box-shadow: 0 0 0 4px rgba(207, 168, 88, 0.14);
+        }
+
+        .modal-advertencia-contenido.modal-invitados-contenido {
+            display: flex;
+            flex-direction: column;
+            width: min(820px, 94vw);
+            max-height: min(720px, 88vh);
+            overflow: hidden;
+        }
+
+        .invitados-categorias,
+        .invitados-lista {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+            gap: 9px;
+            margin-top: 18px;
+        }
+
+        .invitados-categoria,
+        .invitado-opcion {
+            min-height: 44px;
+            padding: 10px 12px;
+            border: 1px solid rgba(207, 168, 88, 0.32);
+            border-radius: 7px;
+            background: #171613;
+            color: var(--crema);
+            font: 700 13px var(--fuente-principal);
+            cursor: pointer;
+            transition: border-color 160ms ease, background 160ms ease;
+        }
+
+        .invitados-categoria:hover,
+        .invitado-opcion:hover {
+            border-color: var(--dorado);
+            background: #242016;
+        }
+
+        .invitados-lista {
+            grid-template-columns: 1fr;
+            flex: 1 1 auto;
+            min-height: 0;
+            max-height: none;
+            overflow-y: auto;
+            scrollbar-width: none;
+        }
+
+        .invitados-lista::-webkit-scrollbar {
+            display: none;
+        }
+
+        .invitado-opcion {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            text-align: left;
+        }
+
+        .invitado-opcion-foto {
+            flex: 0 0 42px;
+            width: 42px;
+            height: 42px;
+            overflow: hidden;
+            border: 1px solid rgba(230, 199, 127, 0.55);
+            border-radius: 50%;
+            background: #090909 center / cover no-repeat;
+        }
+
+        .invitado-opcion-foto.sin-foto {
+            background-image: var(--silueta-jugador);
+        }
+
+        .invitado-opcion-foto img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .invitado-opcion-info {
+            display: grid;
+            flex: 1 1 auto;
+            min-width: 0;
+            gap: 4px;
+        }
+
+        .invitado-opcion small {
+            color: var(--color-crema-oscuro);
+            font-size: 10px;
+            text-transform: uppercase;
+        }
+
+        .invitado-opcion .invitado-opcion-detalle {
+            color: #b7b0a2;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: none;
+        }
+
+        .invitados-mensaje.invitados-mensaje-subtitulo {
+            margin-top: 20px;
+            padding-bottom: 9px;
+            border-bottom: 1px solid rgba(207, 168, 88, 0.3);
+            color: #e6c77f;
+            font-size: 16px;
+            font-weight: 800;
+        }
+
+        .invitados-mensaje {
+            margin: 16px 0 0;
+            color: #b7b0a2;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .invitados-categorias[hidden],
+        .invitados-lista[hidden],
+        .invitados-volver[hidden],
+        .invitados-mensaje[hidden] {
+            display: none;
+        }
+
+        .modal-advertencia-acciones.invitados-acciones {
+            justify-content: flex-start;
+            flex-shrink: 0;
+        }
+
+        .carta-foto img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+            display: block;
+        }
+
+        .carta-nombre {
+            position: relative;
+            color: var(--crema);
+            font-size: 12px;
+            font-weight: bold;
+            text-align: center;
+            text-transform: uppercase;
+            width: 100%;
+            white-space: normal;
+            overflow: visible;
+            text-overflow: clip;
+            line-height: 1.2;
+            min-height: 30px;
+            word-break: break-word;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+
+        .carta-nombre::before {
+            position: absolute;
+            top: -7px;
+            left: 50%;
+            width: 24px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(230, 199, 127, 0.78), transparent);
+            content: '';
+            transform: translateX(-50%);
+        }
+
+        .carta-anio {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            margin-top: 3px;
+            color: #e6c77f;
+            font-size: 13px;
+            font-weight: 900;
+            line-height: 1;
+            text-align: center;
+        }
+
+        .carta-anio::before,
+        .carta-anio::after {
+            height: 1px;
+            flex: 1;
+            background: linear-gradient(90deg, transparent, rgba(207, 168, 88, 0.64));
+            content: '';
+        }
+
+        .carta-anio::after {
+            transform: rotate(180deg);
+        }
+
+        /* Panel Derecho: El Lienzo de la Imagen */
+        .panel-lienzo {
+            flex: 1;
+            min-width: 350px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .estadisticas {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            margin-bottom: 10px;
+            color: var(--gris-texto);
+            font-weight: bold;
+        }
+
+        /* =========================================
+           UX Y FUNCIONALIDAD (BARRA, CHECKS Y BORRADO)
+           ========================================= */
+
+        /* 1. Barra de Progreso Visual */
+        .barra-progreso-contenedor {
+            width: 100%;
+            height: 6px;
+            background-color: rgba(255, 255, 255, 0.05); /* Fondo oscuro */
+            border-radius: 3px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .barra-progreso {
+            height: 100%;
+            width: 0%; /* Inicia vacia */
+            background: linear-gradient(90deg, var(--color-crema-oscuro), #b08d57);
+            transition: width 0.4s ease-out, background-color 0.4s ease;
+            box-shadow: 0 0 10px var(--brillo-dorado-fuerte);
+        }
+
+        .barra-progreso.completa {
+            animation: pulsoBarra 1.5s infinite;
+        }
+
+        @keyframes pulsoBarra {
+            0% { opacity: 0.7; }
+            50% { opacity: 1; box-shadow: 0 0 15px rgba(207, 168, 88, 0.8); }
+            100% { opacity: 0.7; }
+        }
+
+        /* Check animado de selección en la plantilla */
+        .carta-jugador::after {
+            content: '\2713';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            display: grid;
+            place-items: center;
+            width: 54px;
+            height: 54px;
+            transform: translate(-50%, -50%) scale(0.55) rotate(-35deg);
+            border: 1px solid rgba(253, 245, 223, 0.72);
+            border-radius: 50%;
+            background: rgba(10, 10, 10, 0.88);
+            font-size: 2.6rem;
+            line-height: 1;
+            color: var(--color-crema-oscuro);
+            font-weight: 600;
+            text-shadow: 0 0 12px rgba(207, 168, 88, 0.8);
+            box-shadow: 0 0 0 5px rgba(207, 168, 88, 0.12), 0 0 24px rgba(207, 168, 88, 0.38);
+            opacity: 0;
+            transition: opacity 180ms ease, transform 320ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .carta-jugador.seleccionado-check {
+            transform: scale(0.9) !important; /* Se encoge sutilmente */
+            border-color: var(--color-crema-oscuro);
+            background-color: var(--negro-elevado);
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        .carta-jugador.seleccionado-check::after {
+            transform: translate(-50%, -50%) scale(1) rotate(0);
+            opacity: 1;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .carta-jugador::after {
+                transition: none;
+            }
+        }
+
+        /* La tarjeta convocada se elimina al tocarla. */
+        .jugador-convocado {
+            position: relative;
+        }
+
+        .jugador-convocado:hover {
+            border-left: 4px solid var(--color-crema-oscuro) !important;
+            background-color: rgba(207, 168, 88, 0.1) !important;
+        }
+
+        .lienzo-exportar {
+            background-color: var(--bg-oscuro);
+            border: 2px solid var(--dorado);
+            border-radius: 12px;
+            padding: 30px;
+            position: relative;
+            min-height: var(--alto-lienzo-convocatoria);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+
+        .grafico-header {
+            text-align: center;
+            border-bottom: 1px solid var(--gris-texto);
+            padding-bottom: 15px;
+            padding-left: 30px;
+            padding-right: 30px;
+            margin-bottom: 20px;
+            margin-left: -30px;
+            margin-right: -30px;
+        }
+
+        .grafico-header h2 {
+            color: var(--dorado);
+            margin: 0;
+            font-size: 26px;
+            text-transform: uppercase;
+        }
+
+        .grafico-header p {
+            color: var(--crema);
+            margin: 5px 0 0 0;
+            font-size: 14px;
+            letter-spacing: 1px;
+        }
+
+        /* Lista de Convocados (Solo nombres) */
+        .lista-convocados {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .lista-convocados > .jugador-convocado:nth-child(odd):last-child {
+            grid-column: 1 / -1;
+            justify-self: center;
+            width: calc(50% - 6px);
+        }
+
+        .resumen-posiciones-convocados {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px 22px;
+            position: relative;
+            z-index: 2;
+            margin-top: 14px;
+            padding-top: 9px;
+            border-top: 1px solid rgba(207, 168, 88, 0.28);
+            color: var(--color-crema-oscuro);
+            font-size: 13px;
+            font-weight: 900;
+            text-align: center;
+        }
+
+        .lista-convocados-wrapper {
+            position: relative;
+            min-height: 160px;
+            padding-top: 42px;
+        }
+
+        .btn-vaciar-lista {
+            position: absolute;
+            top: 0;
+            right: 0;
+            z-index: 6;
+            overflow: hidden;
+            background: var(--color-negro-tarjeta);
+            color: var(--dorado-mudo);
+            border: 1px solid var(--dorado-mudo);
+            border-radius: 8px;
+            padding: 7px 12px;
+            font-family: var(--fuente-principal);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            line-height: 1.2;
+            text-transform: uppercase;
+            cursor: not-allowed;
+            transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease, border-color 180ms ease;
+            opacity: 0.75;
+        }
+
+        .btn-vaciar-lista:not(:disabled) {
+            background: linear-gradient(135deg, var(--color-crema-oscuro), #b08d57);
+            color: var(--color-negro-fondo);
+            border-color: rgba(253, 245, 223, 0.48);
+            cursor: pointer;
+            opacity: 1;
+            box-shadow: 0 0 16px var(--brillo-dorado-fuerte);
+            animation: aparecerBotonVaciado 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+        }
+
+        .btn-vaciar-lista:not(:disabled):hover {
+            transform: translateY(-2px) scale(1.02);
+            filter: brightness(1.08);
+            box-shadow: 0 7px 22px rgba(207, 168, 88, 0.38);
+        }
+
+        .btn-vaciar-lista:not(:disabled):active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        .btn-vaciar-lista:focus-visible {
+            outline: 2px solid #f4dda5;
+            outline-offset: 3px;
+        }
+
+        .btn-vaciar-lista:disabled {
+            opacity: 0.6;
+            transform: none;
+            box-shadow: none;
+        }
+
+        @keyframes aparecerBotonVaciado {
+            from { opacity: 0.7; transform: translateY(-4px) scale(0.97); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .logo-lista-centro {
+            position: absolute;
+            top: calc(50% + 5px);
+            left: 50%;
+            width: min(66%, 360px);
+            height: auto;
+            opacity: 0.14;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .jugador-convocado {
+            background: linear-gradient(90deg, rgba(207,168,88,0.05) 0%, var(--negro-elevado) 100%);
+            border-left: 4px solid var(--color-crema-oscuro);
+            border: 1px solid rgba(207, 168, 88, 0.3);
+            padding: 8px 10px;
+            border-radius: 4px;
+            font-size: 15px;
+            color: var(--crema);
+            cursor: pointer;
+            transition: background 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            box-shadow: 0 5px 15px var(--brillo-dorado);
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+
+        .jugador-convocado:hover {
+            background-color: #2a2a2a;
+            box-shadow: 0 5px 20px var(--brillo-dorado-fuerte);
+        }
+
+        .convocado-foto {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background-color: #000;
+            border: 1px solid var(--gris-texto);
+            background-size: 70% 70%;
+            background-position: center;
+            background-repeat: no-repeat;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .convocado-foto.sin-foto {
+            background-image: var(--silueta-jugador);
+        }
+
+        .convocado-foto img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+            display: block;
+        }
+
+        .convocado-texto {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .convocado-nombre {
+            width: 100%;
+            font-weight: 700;
+            color: var(--crema);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.2;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+
+        .acciones-lienzo {
+            margin-top: 12px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .btn-descargar {
+            background: var(--color-negro-tarjeta);
+            color: var(--dorado-mudo);
+            border: 1px solid var(--dorado-mudo);
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 800;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            cursor: not-allowed;
+            transition: all 0.4s ease;
+            opacity: 0.7;
+        }
+
+        .btn-descargar:not(:disabled) {
+            background: linear-gradient(135deg, var(--color-crema-oscuro), #b08d57);
+            color: var(--color-negro-fondo);
+            border: none;
+            cursor: pointer;
+            opacity: 1;
+            box-shadow: 0 0 20px var(--brillo-dorado-fuerte);
+            animation: pulseButton 2s infinite;
+        }
+
+        .btn-descargar:not(:disabled):hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 30px rgba(207, 168, 88, 0.6);
+        }
+
+        .btn-descargar:disabled {
+            opacity: 0.7;
+            transform: none;
+            box-shadow: none;
+        }
+
+        @keyframes pulseButton {
+            0% { box-shadow: 0 0 15px var(--brillo-dorado); }
+            50% { box-shadow: 0 0 25px var(--brillo-dorado-fuerte); }
+            100% { box-shadow: 0 0 15px var(--brillo-dorado); }
+        }
+
+        .modal-advertencia {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.76);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            z-index: 1300;
+            box-sizing: border-box;
+        }
+
+        .modal-advertencia.abierto {
+            display: flex;
+            animation: aparecerFondoAdvertencia 220ms ease-out both;
+        }
+
+        .modal-advertencia-contenido {
+            position: relative;
+            overflow: hidden;
+            width: min(420px, 92vw);
+            background: linear-gradient(150deg, #242119 0%, #171614 42%, #101010 100%);
+            border: 1px solid rgba(207, 168, 88, 0.55);
+            border-radius: 14px;
+            box-shadow: 0 24px 70px rgba(0, 0, 0, 0.72), 0 0 32px rgba(207, 168, 88, 0.12);
+            padding: 26px;
+            animation: entrarAdvertencia 360ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+        }
+
+        .modal-advertencia-contenido::before {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #e2c47e 28%, #fff1c8 50%, #b58e49 72%, transparent);
+            content: '';
+        }
+
+        .modal-advertencia-titulo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 0 0 14px;
+            color: #e6c77f;
+            font-size: 19px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .modal-advertencia-titulo::before {
+            display: grid;
+            flex: 0 0 34px;
+            width: 34px;
+            height: 34px;
+            place-items: center;
+            border: 1px solid rgba(230, 199, 127, 0.65);
+            border-radius: 50%;
+            background: rgba(207, 168, 88, 0.12);
+            box-shadow: 0 0 18px rgba(207, 168, 88, 0.16), inset 0 0 12px rgba(207, 168, 88, 0.08);
+            color: #f4dda5;
+            content: '!';
+            font-size: 20px;
+            line-height: 1;
+        }
+
+        .modal-advertencia-texto {
+            margin: 0;
+            padding: 14px 0 2px;
+            border-top: 1px solid rgba(207, 168, 88, 0.22);
+            color: rgba(253, 245, 223, 0.9);
+            font-size: 14px;
+            line-height: 1.65;
+        }
+
+        .modal-advertencia-acciones,
+        .modal-confirmacion-acciones {
+            margin-top: 22px;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        @keyframes aparecerFondoAdvertencia {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes entrarAdvertencia {
+            from { opacity: 0; transform: translateY(14px) scale(0.97); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .modal-estadisticas {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.76);
+            z-index: 1400;
+        }
+
+        .modal-estadisticas.abierto {
+            display: flex;
+        }
+
+        .boton-ayuda {
+            position: fixed;
+            bottom: max(20px, env(safe-area-inset-bottom));
+            left: max(20px, env(safe-area-inset-left));
+            z-index: 1200;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            min-height: 46px;
+            padding: 0 17px;
+            border: 1px solid rgba(244, 221, 165, 0.7);
+            border-radius: 999px;
+            background: linear-gradient(135deg, #e1c27a 0%, #b99247 100%);
+            color: #17130b;
+            font: 800 12px var(--fuente-principal);
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+            cursor: pointer;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.42), 0 0 20px rgba(207, 168, 88, 0.2);
+            transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+        }
+
+        .boton-ayuda svg {
+            width: 19px;
+            height: 19px;
+            flex: 0 0 19px;
+        }
+
+        .boton-ayuda:hover {
+            transform: translateY(-3px);
+            filter: brightness(1.08);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.48), 0 0 24px rgba(207, 168, 88, 0.34);
+        }
+
+        .boton-ayuda:active {
+            transform: translateY(-1px) scale(0.98);
+        }
+
+        .boton-ayuda:focus-visible {
+            outline: 2px solid #f4dda5;
+            outline-offset: 4px;
+        }
+
+        #modal-ayuda {
+            z-index: 1500;
+        }
+
+        .modal-ayuda-contenido {
+            width: min(520px, 94vw);
+        }
+
+        .modal-ayuda .modal-advertencia-titulo::before {
+            content: '?';
+        }
+
+        .modal-ayuda-intro {
+            margin: 0;
+            color: var(--gris-texto);
+            font-size: 13px;
+            line-height: 1.55;
+        }
+
+        .lista-ayuda {
+            display: grid;
+            gap: 9px;
+            margin-top: 18px;
+        }
+
+        .boton-pregunta-ayuda {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            width: 100%;
+            min-height: 48px;
+            padding: 11px 13px;
+            border: 1px solid rgba(207, 168, 88, 0.28);
+            border-radius: 8px;
+            background: linear-gradient(120deg, rgba(207, 168, 88, 0.08), rgba(255, 255, 255, 0.025));
+            color: var(--crema);
+            font: 700 13px/1.4 var(--fuente-principal);
+            text-align: left;
+            cursor: pointer;
+            transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+        }
+
+        .boton-pregunta-ayuda::after {
+            flex: 0 0 auto;
+            color: var(--dorado);
+            content: '+';
+            font-size: 20px;
+            font-weight: 400;
+            line-height: 1;
+        }
+
+        .boton-pregunta-ayuda[aria-expanded="true"] {
+            border-color: rgba(230, 199, 127, 0.65);
+            background: rgba(207, 168, 88, 0.12);
+        }
+
+        .boton-pregunta-ayuda[aria-expanded="true"]::after {
+            content: '\2212';
+        }
+
+        .boton-pregunta-ayuda:hover {
+            transform: translateX(2px);
+            border-color: rgba(230, 199, 127, 0.62);
+        }
+
+        .boton-pregunta-ayuda:focus-visible {
+            outline: 2px solid #f4dda5;
+            outline-offset: 2px;
+        }
+
+        .respuesta-ayuda {
+            margin: 7px 2px 3px;
+            padding: 10px 12px;
+            border-left: 2px solid var(--dorado);
+            color: rgba(253, 245, 223, 0.82);
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .respuesta-ayuda[hidden] {
+            display: none;
+        }
+
+        .modal-ayuda-cierre {
+            margin-top: 18px;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .boton-ayuda,
+            .boton-pregunta-ayuda {
+                transition: none;
+            }
+        }
+
+        .modal-estadisticas-contenido {
+            position: relative;
+            width: min(380px, 92vw);
+            padding: 24px;
+            background: linear-gradient(145deg, #1f1f1f 0%, #111 100%);
+            border: 1px solid var(--dorado);
+            border-radius: 12px;
+            box-shadow: 0 16px 35px rgba(0, 0, 0, 0.65);
+        }
+
+        .modal-estadisticas-titulo {
+            flex: 1;
+            min-width: 0;
+            margin: 0;
+            color: var(--dorado);
+            font-size: 20px;
+            text-transform: uppercase;
+        }
+
+        .modal-estadisticas-encabezado {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-height: 64px;
+            margin-bottom: 18px;
+            padding-right: 38px;
+        }
+
+        .modal-estadisticas-avatar {
+            flex: 0 0 58px;
+            width: 58px;
+            height: 58px;
+            overflow: hidden;
+            background: #000;
+            border: 2px solid var(--dorado);
+            border-radius: 50%;
+            box-shadow: 0 0 12px rgba(207, 168, 88, 0.22);
+        }
+
+        .modal-estadisticas-avatar.sin-foto {
+            background: var(--silueta-jugador) center / cover no-repeat, #000;
+        }
+
+        .modal-estadisticas-avatar img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .modal-estadisticas-resumen {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .modal-estadistica {
+            display: grid;
+            gap: 4px;
+            padding: 10px;
+            border: 1px solid rgba(207, 168, 88, 0.35);
+            border-radius: 8px;
+            color: var(--crema);
+            text-align: center;
+        }
+
+        .modal-estadistica strong,
+        .modal-estadisticas-subtitulo {
+            color: var(--dorado);
+        }
+
+        .modal-estadistica span {
+            font-size: 20px;
+            font-weight: 800;
+        }
+
+        .modal-estadistica .modal-estadistica-porcentaje {
+            color: var(--gris-texto);
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .modal-estadistica-inscripcion {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 9px 10px;
+            border: 1px solid rgba(207, 168, 88, 0.35);
+            border-radius: 8px;
+            color: var(--crema);
+            font-size: 13px;
+        }
+
+        .modal-estadistica-inscripcion strong {
+            color: var(--dorado);
+        }
+
+        .modal-estadistica-inscripcion span {
+            font-weight: 800;
+        }
+
+        .modal-estadisticas-subtitulo {
+            margin: 0 0 10px;
+            font-size: 13px;
+            text-transform: uppercase;
+        }
+
+        .modal-entrenamientos-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            overflow: hidden;
+            border: 1px solid rgba(207, 168, 88, 0.35);
+            border-radius: 8px;
+            color: var(--crema);
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .modal-entrenamientos-grid span {
+            padding: 8px 4px;
+            border-right: 1px solid rgba(207, 168, 88, 0.2);
+            border-bottom: 1px solid rgba(207, 168, 88, 0.2);
+        }
+
+        .modal-entrenamientos-grid span:nth-child(3n) {
+            border-right: none;
+        }
+
+        .modal-entrenamientos-grid span:nth-last-child(-n + 3) {
+            border-bottom: none;
+        }
+
+        .btn-cerrar-estadisticas {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: grid;
+            place-items: center;
+            width: 34px;
+            height: 34px;
+            padding: 0;
+            border: 1px solid rgba(207, 168, 88, 0.48);
+            border-radius: 50%;
+            background: rgba(10, 10, 10, 0.72);
+            color: var(--color-crema-oscuro);
+            font-size: 23px;
+            line-height: 1;
+            cursor: pointer;
+            box-shadow: 0 0 12px rgba(207, 168, 88, 0.1);
+            transition: transform 180ms ease, color 180ms ease, background 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+        }
+
+        .btn-cerrar-estadisticas:hover {
+            transform: rotate(90deg);
+            color: var(--color-crema);
+            background: rgba(207, 168, 88, 0.16);
+            border-color: var(--color-crema-oscuro);
+            box-shadow: 0 0 16px rgba(207, 168, 88, 0.28);
+        }
+
+        .btn-cerrar-estadisticas:focus-visible {
+            outline: 2px solid var(--color-crema-oscuro);
+            outline-offset: 3px;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .btn-cerrar-estadisticas {
+                transition: none;
+            }
+        }
+
+        .carta-foto-interactiva,
+        .convocado-foto-interactiva {
+            cursor: pointer;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .carta-foto-interactiva:hover,
+        .convocado-foto-interactiva:hover {
+            border-color: var(--color-crema-oscuro);
+            transform: scale(1.05);
+        }
+
+        .btn-modal-primario {
+            min-width: 104px;
+            background: linear-gradient(180deg, #e1c27a 0%, #b99247 100%);
+            color: #17130b;
+            border: 1px solid #e1c27a;
+            border-radius: 7px;
+            padding: 10px 18px;
+            font-family: var(--fuente-principal);
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            cursor: pointer;
+            box-shadow: 0 5px 16px rgba(207, 168, 88, 0.2);
+            transition: transform 160ms ease, box-shadow 160ms ease, filter 160ms ease;
+        }
+
+        .btn-modal-primario:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.08);
+            box-shadow: 0 8px 22px rgba(207, 168, 88, 0.32);
+        }
+
+        .btn-modal-primario:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        .btn-modal-primario:focus-visible,
+        .btn-cancelar-vaciado:focus-visible {
+            outline: 2px solid #f4dda5;
+            outline-offset: 3px;
+        }
+
+        .btn-cancelar-vaciado {
+            min-width: 104px;
+            padding: 10px 18px;
+            border: 1px solid rgba(207, 168, 88, 0.42);
+            border-radius: 7px;
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--crema);
+            font-family: var(--fuente-principal);
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
+        }
+
+        .btn-cancelar-vaciado:hover {
+            transform: translateY(-2px);
+            border-color: rgba(230, 199, 127, 0.72);
+            background: rgba(207, 168, 88, 0.1);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .modal-advertencia.abierto,
+            .modal-advertencia-contenido {
+                animation: none;
+            }
+
+            .btn-modal-primario,
+            .btn-cancelar-vaciado,
+            .btn-vaciar-lista {
+                transition: none;
+                animation: none;
+            }
+        }
+
+        /* =========================================
+           ESTILOS DE LOGOS Y MARCAS DE AGUA
+           ========================================= */
+        .header-logo {
+            display: block;
+            margin: 0 auto 12px auto;
+            width: 90px;
+            height: auto;
+            filter: drop-shadow(0 5px 15px rgba(207, 168, 88, 0.4));
+            animation: fadeUp 0.8s ease-out;
+        }
+
+        #lienzo {
+            position: relative;
+            overflow: hidden;
+        }
+
+        #lienzoPrincipal {
+            position: relative;
+            overflow: hidden;
+        }
+
+        #lienzo > *,
+        #lienzoPrincipal > * {
+            position: relative;
+            z-index: 2;
+        }
+
+        #lienzo > .contador-exportacion {
+            position: absolute;
+            z-index: 10;
+        }
+
+        .contador-exportacion {
+            top: 20px;
+            right: 24px;
+            display: none;
+            align-items: center;
+            min-height: 34px;
+            padding: 7px 12px;
+            border: 1px solid rgba(207, 168, 88, 0.58);
+            border-radius: 999px;
+            background: rgba(18, 18, 18, 0.94);
+            color: var(--color-crema-oscuro);
+            font: 800 12px var(--fuente-principal);
+            text-transform: uppercase;
+            white-space: nowrap;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+        }
+
+        .marca-agua-dinamica {
+            position: absolute;
+            top: calc(50% + 5px);
+            left: 50%;
+            width: min(66%, 400px);
+            opacity: 0.14;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @media screen and (max-width: 1024px) {
+            /* Forzamos a que el cuerpo y la raíz midan exactamente 1100px en celulares */
+            html, body {
+                width: 1100px !important;
+                min-width: 1100px !important;
+                max-width: 1100px !important;
+                overflow-x: hidden !important;
+                margin: 0 !important;
+                padding: 20px !important;
+                /* Esto hace que el navegador "haga zoom" automático a la esquina superior izquierda,
+                   ocultando todo el espacio en blanco y vacío de la derecha y de abajo */
+                transform: scale(calc(100vw / 1100));
+                transform-origin: top left;
+            }
+
+            /* Evitamos que aparezca la barra de desplazamiento horizontal en el celular */
+            body {
+                width: 100vw !important;
+                overflow-x: hidden;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="scroll-progress"></div>
+
+    <div class="header-app">
+        <img src="Real_Sevilla.png" alt="Escudo Real Sevilla FC" class="header-logo">
+        <h1>Convocatoria U13</h1>
+        <p class="header-subtitulo">2013-2014<br>DT: Daniel Torres</p>
+        <div class="controles-superiores">
+            <div class="control-grupo">
+                <label id="label-select-torneo" for="boton-select-torneo">Torneo</label>
+                <div class="selector-torneo" id="selector-torneo">
+                    <button class="selector-torneo-trigger" id="boton-select-torneo" type="button" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-controls="menu-torneos" aria-labelledby="label-select-torneo texto-torneo-seleccionado">
+                        <span class="selector-torneo-trigger-texto" id="texto-torneo-seleccionado">Seleccione un torneo</span>
+                        <span class="selector-torneo-flecha" aria-hidden="true"></span>
+                    </button>
+                    <div class="selector-torneo-menu" id="menu-torneos" role="listbox" aria-labelledby="label-select-torneo" aria-hidden="true">
+                        <button class="selector-torneo-opcion" type="button" role="option" aria-selected="false" data-value="Amistosos">
+                            <span class="selector-torneo-opcion-nombre">Amistosos</span>
+                            <span class="selector-torneo-opcion-detalle">0 Jugadores</span>
+                        </button>
+                        <button class="selector-torneo-opcion" type="button" role="option" aria-selected="false" data-value="Torneo Progol Liga Menor">
+                            <span class="selector-torneo-opcion-nombre">Progol Liga Menor</span>
+                            <span class="selector-torneo-opcion-detalle">0 Jugadores</span>
+                        </button>
+                        <button class="selector-torneo-opcion" type="button" role="option" aria-selected="false" data-value="Torneo Independencia 2026">
+                            <span class="selector-torneo-opcion-nombre">Independencia 2026</span>
+                            <span class="selector-torneo-opcion-detalle">0 Jugadores</span>
+                        </button>
+                    </div>
+                </div>
+                <select class="selector-torneo-nativo" id="select-torneo" aria-hidden="true" tabindex="-1" onchange="actualizarTorneo()">
+                    <option id="opcion-torneo-placeholder" value="">Seleccione un torneo</option>
+                    <option value="Amistosos">Amistosos</option>
+                    <option value="Torneo Progol Liga Menor">Torneo Progol Liga Menor</option>
+                    <option value="Torneo Independencia 2026">Torneo Independencia 2026</option>
+                </select>
+            </div>
+            <div class="control-grupo">
+                <label for="input-cupos">Cupos</label>
+                <input type="number" id="input-cupos" value="18" min="10" max="30" onchange="actualizarContador()">
+            </div>
+        </div>
+    </div>
+
+    <div class="contenedor-principal">
+        <div class="panel-plantilla">
+            <h3>Plantilla U13 disponible (<span id="contador-disponibles">0</span> jugadores)</h3>
+            <div class="caja-jugadores">
+                <div class="grid-jugadores" id="lista-disponibles">
+                </div>
+            </div>
+        </div>
+
+        <div class="panel-lienzo">
+            <div class="estadisticas">
+                <div style="display: flex; justify-content: space-between; width: 100%;">
+                    <span>Convocatoria</span>
+                    <span id="contador-texto" style="color: var(--dorado);">0 / 18</span>
+                </div>
+                <div class="barra-progreso-contenedor">
+                    <div class="barra-progreso" id="barraProgreso"></div>
+                </div>
+            </div>
+            
+            <div class="lienzo-exportar" id="lienzo">
+                <span class="contador-exportacion" id="contador-exportacion" aria-hidden="true"></span>
+                <div class="grafico-header">
+                    <h2>Real Sevilla FC</h2>
+                    <p>Categoría U13 | <span id="texto-torneo">Seleccione un torneo</span></p>
+                </div>
+                
+                <div class="lista-convocados-wrapper">
+                    <button class="btn-vaciar-lista" id="btn-vaciar-lista" type="button" onclick="abrirConfirmacionVaciado()" data-html2canvas-ignore="true" disabled>Vaciar Lista</button>
+                    <img src="Real_Sevilla.png" alt="Logo centrado" class="marca-agua-dinamica logo-lista-centro" data-html2canvas-ignore="true">
+                    <div class="lista-convocados" id="lista-seleccionados">
+                    </div>
+                    <div class="resumen-posiciones-convocados" id="resumen-posiciones-convocados" aria-live="polite">
+                        <span data-posicion="POR">POR: 0</span>
+                        <span data-posicion="DEF">DEF: 0</span>
+                        <span data-posicion="MED">MED: 0</span>
+                        <span data-posicion="OFE">OFE: 0</span>
+                    </div>
+                </div>
+            </div>
+            <div class="acciones-lienzo">
+                <button class="btn-descargar" id="btn-descargar" type="button" onclick="descargarConvocatoriaPNG()" disabled>Descargar PNG</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-advertencia" id="modal-advertencia" onclick="cerrarModalAdvertencia(event)">
+        <div class="modal-advertencia-contenido">
+            <h3 class="modal-advertencia-titulo">Límite Alcanzado</h3>
+            <p class="modal-advertencia-texto" id="modal-advertencia-texto"></p>
+            <div class="modal-advertencia-acciones">
+                <button class="btn-cancelar-vaciado" type="button" onclick="cerrarModalAdvertencia()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-advertencia" id="modal-confirmar-vaciado" onclick="cerrarConfirmacionVaciado(event)">
+        <div class="modal-advertencia-contenido" role="dialog" aria-modal="true" aria-labelledby="titulo-confirmar-vaciado">
+            <h3 class="modal-advertencia-titulo" id="titulo-confirmar-vaciado">Confirmar vaciado</h3>
+            <p class="modal-advertencia-texto">¿Quieres borrar la lista de convocados? Esta acción no se puede deshacer.</p>
+            <div class="modal-confirmacion-acciones">
+                <button class="btn-cancelar-vaciado" id="btn-cancelar-vaciado" type="button" onclick="cerrarConfirmacionVaciado()">Cancelar</button>
+                <button class="btn-modal-primario" type="button" onclick="confirmarVaciadoLista()">Vaciar Lista</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-estadisticas" id="modal-estadisticas" onclick="cerrarModalEstadisticas(event)">
+        <div class="modal-estadisticas-contenido">
+            <button class="btn-cerrar-estadisticas" type="button" aria-label="Cerrar estadísticas" onclick="cerrarModalEstadisticas()">&times;</button>
+            <div class="modal-estadisticas-encabezado">
+                <h3 class="modal-estadisticas-titulo">Estadísticas de<br><span id="modal-estadisticas-jugador"></span></h3>
+                <div class="modal-estadisticas-avatar" id="modal-estadisticas-avatar" role="img" aria-label="Foto del jugador">
+                    <img id="modal-estadisticas-foto" alt="" aria-hidden="true">
+                </div>
+            </div>
+            <div class="modal-estadisticas-resumen">
+                <div class="modal-estadistica">
+                    <strong>Entrenamientos</strong>
+                    <span id="modal-entrenamientos">0/0</span>
+                    <span class="modal-estadistica-porcentaje" id="modal-entrenamientos-porcentaje">Sin datos</span>
+                </div>
+                <div class="modal-estadistica">
+                    <strong>Partidos</strong>
+                    <span id="modal-partidos">0/0</span>
+                    <span class="modal-estadistica-porcentaje" id="modal-partidos-porcentaje">Sin datos</span>
+                </div>
+            </div>
+            <div class="modal-estadistica-inscripcion">
+                <strong>Fecha de Inscripción</strong>
+                <span id="modal-fecha-inscripcion">NA</span>
+            </div>
+            <h4 class="modal-estadisticas-subtitulo">Últimos 5 entrenamientos</h4>
+            <div class="modal-entrenamientos-grid">
+                <span>J</span><span>20-ago</span><span class="modal-entrenamiento-asistencia">NA</span>
+                <span>J</span><span>27-ago</span><span class="modal-entrenamiento-asistencia">NA</span>
+                <span>J</span><span>3-sep</span><span class="modal-entrenamiento-asistencia">NA</span>
+                <span>S</span><span>12-sep</span><span class="modal-entrenamiento-asistencia">NA</span>
+                <span>J</span><span>17-sep</span><span class="modal-entrenamiento-asistencia">NA</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-advertencia" id="modal-invitados" onclick="cerrarModalInvitados(event)">
+        <div class="modal-advertencia-contenido modal-invitados-contenido" role="dialog" aria-modal="true" aria-labelledby="titulo-modal-invitados">
+            <h3 class="modal-advertencia-titulo" id="titulo-modal-invitados">Añadir jugador de otra categoría</h3>
+            <div class="invitados-categorias" id="invitados-categorias"></div>
+            <p class="invitados-mensaje" id="invitados-mensaje" aria-live="polite">Selecciona una categoría para ver sus jugadores.</p>
+            <div class="invitados-lista" id="invitados-lista"></div>
+            <div class="modal-advertencia-acciones invitados-acciones">
+                <button class="btn-modal-primario invitados-volver" id="invitados-volver" type="button" onclick="volverACategoriasInvitados()" hidden>Volver</button>
+                <button class="btn-cancelar-vaciado" type="button" onclick="cerrarModalInvitados()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <button class="boton-ayuda" id="boton-ayuda" type="button" aria-haspopup="dialog" aria-controls="modal-ayuda" onclick="abrirModalAyuda()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M9.6 9a2.5 2.5 0 1 1 4.5 1.5c-.9 1-2.1 1.3-2.1 2.8"></path>
+            <path d="M12 16.8h.01"></path>
+        </svg>
+        <span>Ayuda</span>
+    </button>
+
+    <div class="modal-advertencia modal-ayuda" id="modal-ayuda" onclick="cerrarModalAyuda(event)">
+        <div class="modal-advertencia-contenido modal-ayuda-contenido" role="dialog" aria-modal="true" aria-labelledby="titulo-modal-ayuda">
+            <h3 class="modal-advertencia-titulo" id="titulo-modal-ayuda">Centro de Ayudas</h3>
+            <div class="lista-ayuda">
+                <div>
+                    <button class="boton-pregunta-ayuda" type="button" aria-expanded="false" aria-controls="respuesta-convocar">¿Cómo convocar?</button>
+                    <p class="respuesta-ayuda" id="respuesta-convocar" hidden>Selecciona un torneo y toca una tarjeta para convocar al jugador. Usa “Añadir” para incorporar temporalmente a un jugador de otra categoría.</p>
+                </div>
+                <div>
+                    <button class="boton-pregunta-ayuda" type="button" aria-expanded="false" aria-controls="respuesta-entrenamientos">¿Cómo ver las estadísticas?</button>
+                    <p class="respuesta-ayuda" id="respuesta-entrenamientos" hidden>Toca la foto de un jugador para abrir sus estadísticas de entrenamientos y partidos. Los jugadores no disponibles no tienen estadísticas.</p>
+                </div>
+                <div>
+                    <button class="boton-pregunta-ayuda" type="button" aria-expanded="false" aria-controls="respuesta-añadir">¿Cómo añadir un jugador de otra división?</button>
+                    <p class="respuesta-ayuda" id="respuesta-añadir" hidden>Selecciona la tarjeta que dice "Añadir", elije la categoría del jugador que quieras añadir. Busca al jugador y selecciona "Añadir". Después seleccionalo en la plantilla para ser convocado. Si deseas eliminarlo, sólo selecciona la equis. No podrás ver las estadísticas de un jugador de otra categoría.</p>
+                </div>
+                <div>
+                    <button class="boton-pregunta-ayuda" type="button" aria-expanded="false" aria-controls="respuesta-eliminar">¿Cómo eliminar un jugador de la lista?</button>
+                    <p class="respuesta-ayuda" id="respuesta-eliminar" hidden>Selecciona un jugador de la convocatoria para eliminarlo. Para borrar toda la convocatoria pulsa “Vaciar Lista” y confirma la acción.</p>
+                </div>
+            </div>
+            <div class="modal-advertencia-acciones modal-ayuda-cierre">
+                <button class="btn-cancelar-vaciado" type="button" onclick="cerrarModalAyuda()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://fjbbrzhqlvbkliskslqs.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_QRpv4Rs_fIJ8kXvTegR25w_t2SRSExp';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const baseDeDatosJugadores = [
+            { id: 1, dorsal: 1, nombre: "Ishmel Ramos", posicion: "POR", anioNacimiento: 2013},
+            { id: 2, dorsal: 14, nombre: "Cristiam Cerdas", posicion: "OFE", anioNacimiento: 2014},
+            { id: 3, dorsal: 13, nombre: "Naomi Hernández", posicion: "POR", anioNacimiento: 2013},
+            { id: 5, dorsal: 5, nombre: "Daniel Reyes", posicion: "DEF", anioNacimiento: 2013},
+            { id: 6, dorsal: "-", nombre: "Thiago Cárdenas", posicion: "MED", anioNacimiento: 2013},
+            { id: 7, dorsal: 4, nombre: "Valentina León", posicion: "DEF", anioNacimiento: 2013},
+            { id: 8, dorsal: 17, nombre: "Hanna Porras", posicion: "DEF", anioNacimiento: 2013},
+            { id: 9, dorsal: 27, nombre: "Luciana Calderón", posicion: "MED", anioNacimiento: 2013},
+            { id: 10, dorsal: 99, nombre: "Noah Bolaños", posicion: "POR", anioNacimiento: 2013},
+            { id: 11, dorsal: 17, nombre: "Arturo Chavarría", posicion: "DEF", anioNacimiento: 2014},
+            { id: 12, dorsal: 28, nombre: "Eduany Solano", posicion: "MED", anioNacimiento: 2013, noDisponibleEn: ["Torneo Progol Liga Menor"]},
+            { id: 13, dorsal: 18, nombre: "Santiago Tenorio", posicion: "MED", anioNacimiento: 2013},
+            { id: 15, dorsal: 25, nombre: "Thiago Aguilar", posicion: "OFE", anioNacimiento: 2014},
+            { id: 16, dorsal: 4, nombre: "Isaías Araya", posicion: "MED", anioNacimiento: 2014},
+            { id: 17, dorsal: 48, nombre: "Bryan Quirós", posicion: "MED", anioNacimiento: 2013},
+            { id: 18, dorsal: 9, nombre: "Marco Vanegas", posicion: "MED", anioNacimiento: 2014, noDisponibleEn: ["Torneo Independencia 2026"]},
+            { id: 19, dorsal: 11, nombre: "Eliam Víquez", posicion: "MED", anioNacimiento: 2013},
+            { id: 20, dorsal: 10, nombre: "Deykel Vega", posicion: "MED", anioNacimiento: 2014},
+            { id: 21, dorsal: 29, nombre: "Allen Villalobos", posicion: "OFE", anioNacimiento: 2013},
+            { id: 22, dorsal: 8, nombre: "Francisco Chaves", posicion: "OFE", anioNacimiento: 2013},
+            { id: 23, dorsal: 12, nombre: "Darian López", posicion: "DEF", anioNacimiento: 2013},
+            { id: 24, dorsal: "-", nombre: "José Sánchez", posicion: "DEF", anioNacimiento: 2014},
+            { id: 27, dorsal: "-", nombre: "Cristofer Walters", posicion: "OFE", anioNacimiento: 2013},
+            { id: 29, dorsal: "-", nombre: "Mathías Ulloa", posicion: "OFE", anioNacimiento: 2014, noDisponibleEn: ["Torneo Progol Liga Menor", "Torneo Independencia 2026"]},
+            { id: 30, dorsal: "-", nombre: "Saúl Ramírez", posicion: "OFE", anioNacimiento: 2013, noDisponibleEn: ["Torneo Progol Liga Menor", "Torneo Independencia 2026"]},
+            { id: 31, dorsal: "-", nombre: "Dereck Quesada", posicion: "DEF", anioNacimiento: 2014, noDisponibleEn: ["Torneo Progol Liga Menor", "Torneo Independencia 2026"]}
+        ];
+
+        function normalizarNombreJugador(nombre) {
+            return String(nombre ?? '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, ' ')
+                .trim();
+        }
+
+        async function cargarFotosJugadoresU13() {
+            try {
+                const { data, error } = await _supabase
+                    .from('Estadísticas_U13')
+                    .select('nombre,foto');
+
+                if (error) throw error;
+
+                const fotosPorNombre = new Map((data || [])
+                    .filter(jugador => jugador.nombre && jugador.foto)
+                    .map(jugador => [normalizarNombreJugador(jugador.nombre), jugador.foto]));
+
+                baseDeDatosJugadores.forEach(jugador => {
+                    jugador.foto = fotosPorNombre.get(normalizarNombreJugador(jugador.nombre)) || '';
+                });
+            } catch (error) {
+                console.error('Error al cargar fotos desde Estadísticas_U13:', error.message);
+                baseDeDatosJugadores.forEach(jugador => jugador.foto = '');
+            }
+        }
+        
+        const CATEGORIA_ACTUAL = 'U13';
+        const categoriasInvitados = ['U7', 'U9', 'U11', 'U13', 'U15', 'U17', 'U19'];
+        let convocadosIds = [];
+        const panelPlantilla = document.querySelector('.panel-plantilla');
+        const contDisponibles = document.getElementById('lista-disponibles');
+        const contSeleccionados = document.getElementById('lista-seleccionados');
+        const resumenPosicionesConvocados = document.getElementById('resumen-posiciones-convocados');
+        const lienzoPrincipal = document.getElementById('lienzo');
+        const botonDescargar = document.getElementById('btn-descargar');
+        const botonVaciarLista = document.getElementById('btn-vaciar-lista');
+        const modalAdvertencia = document.getElementById('modal-advertencia');
+        const modalAdvertenciaTexto = document.getElementById('modal-advertencia-texto');
+        const modalConfirmacionVaciado = document.getElementById('modal-confirmar-vaciado');
+        const botonCancelarVaciado = document.getElementById('btn-cancelar-vaciado');
+        const modalAyuda = document.getElementById('modal-ayuda');
+        const botonAyuda = document.getElementById('boton-ayuda');
+        const botonesPreguntaAyuda = Array.from(modalAyuda.querySelectorAll('.boton-pregunta-ayuda'));
+        const modalEstadisticas = document.getElementById('modal-estadisticas');
+        const modalEstadisticasJugador = document.getElementById('modal-estadisticas-jugador');
+        const modalEstadisticasAvatar = document.getElementById('modal-estadisticas-avatar');
+        const modalEstadisticasFoto = document.getElementById('modal-estadisticas-foto');
+        const modalInvitados = document.getElementById('modal-invitados');
+        const contCategoriasInvitados = document.getElementById('invitados-categorias');
+        const contListaInvitados = document.getElementById('invitados-lista');
+        const mensajeInvitados = document.getElementById('invitados-mensaje');
+        const botonVolverInvitados = document.getElementById('invitados-volver');
+        const selectTorneo = document.getElementById('select-torneo');
+        const opcionTorneoPlaceholder = document.getElementById('opcion-torneo-placeholder');
+        const selectorTorneo = document.getElementById('selector-torneo');
+        const botonSelectorTorneo = document.getElementById('boton-select-torneo');
+        const menuTorneos = document.getElementById('menu-torneos');
+        const textoTorneoSeleccionado = document.getElementById('texto-torneo-seleccionado');
+        const opcionesTorneo = Array.from(menuTorneos.querySelectorAll('.selector-torneo-opcion'));
+        const TEXTO_TORNEO_PLACEHOLDER = 'Seleccione un torneo';
+        const ordenPosiciones = { POR: 1, DEF: 2, MED: 3, OFE: 4 };
+        const ordenBasePorId = baseDeDatosJugadores.reduce((acc, jugador, indice) => {
+            acc[jugador.id] = indice;
+            return acc;
+        }, {});
+
+        function hayTorneoSeleccionado() {
+            return selectTorneo.value !== '';
+        }
+
+        function compararJugadores(a, b) {
+            const ordenA = ordenPosiciones[a.posicion] || 99;
+            const ordenB = ordenPosiciones[b.posicion] || 99;
+
+            if (ordenA !== ordenB) {
+                return ordenA - ordenB;
+            }
+
+            const anioA = Number(a.anioNacimiento) || 0;
+            const anioB = Number(b.anioNacimiento) || 0;
+            if (anioA !== anioB) {
+                return anioB - anioA;
+            }
+
+            return (ordenBasePorId[a.id] ?? Number.MAX_SAFE_INTEGER)
+                - (ordenBasePorId[b.id] ?? Number.MAX_SAFE_INTEGER)
+                || String(a.nombre).localeCompare(String(b.nombre));
+        }
+
+        function obtenerTextoDorsal(jugador) {
+            if (jugador.dorsal === undefined || jugador.dorsal === null || jugador.dorsal === '' || jugador.dorsal === '-') {
+                return '-';
+            }
+            return `#${jugador.dorsal}`;
+        }
+
+        function obtenerIdsBloqueados() {
+            const torneoActual = selectTorneo.value;
+            if (!torneoActual) {
+                return [];
+            }
+            return baseDeDatosJugadores
+                .filter(jugador => (jugador.noDisponibleEn || []).includes(torneoActual))
+                .map(jugador => jugador.id);
+        }
+
+        function obtenerIdsOcultos() {
+            const torneoActual = selectTorneo.value;
+            if (!torneoActual) {
+                return [];
+            }
+            return baseDeDatosJugadores
+                .filter(jugador => (jugador.noVisibleEn || []).includes(torneoActual))
+                .map(jugador => jugador.id);
+        }
+
+        function actualizarResumenPosicionesConvocados(jugadores) {
+            const conteo = { POR: 0, DEF: 0, MED: 0, OFE: 0 };
+            jugadores.forEach(jugador => {
+                if (Object.hasOwn(conteo, jugador.posicion)) {
+                    conteo[jugador.posicion] += 1;
+                }
+            });
+            Object.entries(conteo).forEach(([posicion, cantidad]) => {
+                resumenPosicionesConvocados.querySelector(`[data-posicion="${posicion}"]`).innerText = `${posicion}: ${cantidad}`;
+            });
+        }
+
+        function actualizarConteosTorneo() {
+            opcionesTorneo.forEach(opcion => {
+                const torneo = opcion.dataset.value;
+                const cantidad = baseDeDatosJugadores.filter(jugador =>
+                    !(jugador.noDisponibleEn || []).includes(torneo) &&
+                    !(jugador.noVisibleEn || []).includes(torneo)
+                ).length;
+                opcion.querySelector('.selector-torneo-opcion-detalle').innerText = `${cantidad} Jugadores`;
+            });
+        }
+
+        function obtenerLimiteCuposNormalizado() {
+            const inputCupos = document.getElementById('input-cupos');
+            const valorActual = parseInt(inputCupos.value, 10);
+            const valorSeguro = Number.isNaN(valorActual) ? 18 : valorActual;
+            const valorNormalizado = Math.min(30, Math.max(10, valorSeguro));
+            if (String(valorNormalizado) !== inputCupos.value) {
+                inputCupos.value = valorNormalizado;
+            }
+            return valorNormalizado;
+        }
+
+        function mostrarAdvertencia(mensaje) {
+            modalAdvertenciaTexto.innerText = mensaje;
+            modalAdvertencia.classList.add('abierto');
+        }
+
+        function obtenerPorcentajeAsistencia(valor) {
+            const partes = /^(\d+)\s*\/\s*(\d+)$/.exec(String(valor ?? '').trim());
+            if (!partes || Number(partes[2]) === 0) {
+                return 'Sin datos';
+            }
+            return `${Math.round(Number(partes[1]) / Number(partes[2]) * 100)}% asistencia`;
+        }
+
+        function cerrarModalAdvertencia(evento) {
+            if (evento && evento.target !== modalAdvertencia) {
+                return;
+            }
+            modalAdvertencia.classList.remove('abierto');
+        }
+
+        async function abrirModalEstadisticas(jugador) {
+            const nombreJugador = jugador.nombre;
+            modalEstadisticasJugador.innerText = nombreJugador;
+            modalEstadisticasAvatar.setAttribute('aria-label', `Foto de ${nombreJugador}`);
+            const mostrarSilueta = () => {
+                modalEstadisticasAvatar.classList.add('sin-foto');
+                modalEstadisticasFoto.removeAttribute('src');
+            };
+            modalEstadisticasFoto.onerror = mostrarSilueta;
+            if (jugador?.foto) {
+                modalEstadisticasAvatar.classList.remove('sin-foto');
+                modalEstadisticasFoto.src = jugador.foto;
+            } else {
+                mostrarSilueta();
+            }
+            document.getElementById('modal-entrenamientos').innerText = '...';
+            document.getElementById('modal-partidos').innerText = '...';
+            document.getElementById('modal-entrenamientos-porcentaje').innerText = 'Cargando...';
+            document.getElementById('modal-partidos-porcentaje').innerText = 'Cargando...';
+            document.getElementById('modal-fecha-inscripcion').innerText = '...';
+            const gridModal = document.querySelector('.modal-entrenamientos-grid');
+            const mostrarMensaje = mensaje => {
+                const celdaMensaje = document.createElement('span');
+                celdaMensaje.style.gridColumn = '1 / -1';
+                celdaMensaje.style.padding = '10px';
+                celdaMensaje.textContent = mensaje;
+                gridModal.replaceChildren(celdaMensaje);
+            };
+
+            mostrarMensaje('Cargando...');
+
+            modalEstadisticas.classList.add('abierto');
+
+            try {
+                const { data, error } = await _supabase
+                    .from(`Estadísticas_${CATEGORIA_ACTUAL}`)
+                    .select('*')
+                    .eq('nombre', nombreJugador)
+                    .single();
+
+                if (data && !error) {
+                    const textoEntrenamientos = data.entrenamientos || '0/0';
+                    const textoPartidos = data.partidos || '0/0';
+                    document.getElementById('modal-entrenamientos').innerText = textoEntrenamientos;
+                    document.getElementById('modal-partidos').innerText = textoPartidos;
+                    document.getElementById('modal-entrenamientos-porcentaje').innerText = obtenerPorcentajeAsistencia(textoEntrenamientos);
+                    document.getElementById('modal-partidos-porcentaje').innerText = obtenerPorcentajeAsistencia(textoPartidos);
+                    document.getElementById('modal-fecha-inscripcion').innerText = data.fecha_inscripcion || 'NA';
+
+                    const ultimasFechas = Array.isArray(data.ultimas_fechas) ? data.ultimas_fechas : [];
+                    const obtenerMesNumero = mesStr => {
+                        const meses = {
+                            ene: 0, feb: 1, mar: 2, abr: 3, may: 4, jun: 5,
+                            jul: 6, ago: 7, sep: 8, oct: 9, nov: 10, dic: 11
+                        };
+                        return meses[String(mesStr).toLowerCase().substring(0, 3)];
+                    };
+                    const obtenerLetraDia = fechaStr => {
+                        const partes = String(fechaStr).split('-');
+                        if (partes.length < 2) return '-';
+
+                        const dia = parseInt(partes[0], 10);
+                        const mes = obtenerMesNumero(partes[1]);
+                        if (!Number.isInteger(dia) || mes === undefined) return '-';
+
+                        const fecha = new Date(2026, mes, dia);
+                        if (fecha.getMonth() !== mes || fecha.getDate() !== dia) return '-';
+
+                        return ['D', 'L', 'M', 'K', 'J', 'V', 'S'][fecha.getDay()] || '-';
+                    };
+                    const formatoSiNo = valor => {
+                        if ([1, '1', '1.0'].includes(valor)) return 'SI';
+                        if ([0, '0', '0.0'].includes(valor)) return 'NO';
+                        return 'NA';
+                    };
+
+                    if (ultimasFechas.length > 0) {
+                        const filas = [];
+                        ultimasFechas.forEach(item => {
+                            const asistenciaTexto = formatoSiNo(item?.asistio);
+                            const celdaDia = document.createElement('span');
+                            const celdaFecha = document.createElement('span');
+                            const celdaAsistencia = document.createElement('span');
+
+                            celdaDia.textContent = obtenerLetraDia(item?.fecha);
+                            celdaDia.style.fontWeight = '700';
+                            celdaDia.style.color = 'var(--dorado)';
+                            celdaFecha.textContent = String(item?.fecha ?? '');
+                            celdaAsistencia.textContent = asistenciaTexto;
+                            celdaAsistencia.style.fontWeight = '800';
+                            let colorTexto = '#4ade80';
+                            if (asistenciaTexto === 'NO') colorTexto = '#f87171';
+                            if (asistenciaTexto === 'NA') colorTexto = '#ffffff';
+                            celdaAsistencia.style.color = colorTexto;
+
+                            filas.push(celdaDia, celdaFecha, celdaAsistencia);
+                        });
+                        gridModal.replaceChildren(...filas);
+                    } else {
+                        mostrarMensaje('Sin registros recientes');
+                    }
+                } else {
+                    if (error) console.error('Error de Supabase al cargar estadísticas:', error.message);
+                    document.getElementById('modal-entrenamientos').innerText = '0/0';
+                    document.getElementById('modal-partidos').innerText = '0/0';
+                    document.getElementById('modal-entrenamientos-porcentaje').innerText = 'Sin datos';
+                    document.getElementById('modal-partidos-porcentaje').innerText = 'Sin datos';
+                    document.getElementById('modal-fecha-inscripcion').innerText = 'Sin datos';
+                    mostrarMensaje('Sin datos disponibles');
+                }
+            } catch (err) {
+                console.error('Error al cargar estadísticas', err);
+                document.getElementById('modal-entrenamientos-porcentaje').innerText = 'Sin datos';
+                document.getElementById('modal-partidos-porcentaje').innerText = 'Sin datos';
+                mostrarMensaje('Error de carga');
+            }
+        }
+
+        function cerrarModalEstadisticas(evento) {
+            if (evento && evento.target !== modalEstadisticas) {
+                return;
+            }
+            modalEstadisticas.classList.remove('abierto');
+        }
+
+        function abrirModalAyuda() {
+            modalAyuda.classList.add('abierto');
+            botonesPreguntaAyuda[0].focus();
+        }
+
+        function cerrarModalAyuda(evento) {
+            if (evento && evento.target !== modalAyuda) {
+                return;
+            }
+            if (!modalAyuda.classList.contains('abierto')) {
+                return;
+            }
+            modalAyuda.classList.remove('abierto');
+            botonAyuda.focus();
+        }
+
+        botonesPreguntaAyuda.forEach(boton => {
+            boton.addEventListener('click', () => {
+                const expandir = boton.getAttribute('aria-expanded') !== 'true';
+                botonesPreguntaAyuda.forEach(otroBoton => {
+                    otroBoton.setAttribute('aria-expanded', 'false');
+                    document.getElementById(otroBoton.getAttribute('aria-controls')).hidden = true;
+                });
+                boton.setAttribute('aria-expanded', String(expandir));
+                document.getElementById(boton.getAttribute('aria-controls')).hidden = !expandir;
+            });
+        });
+
+        function hacerFotoInteractiva(elementoFoto, jugador, permitirEstadisticas = true) {
+            if (jugador.sinEstadisticas || !permitirEstadisticas) {
+                return;
+            }
+            elementoFoto.classList.add(elementoFoto.classList.contains('carta-foto')
+                ? 'carta-foto-interactiva'
+                : 'convocado-foto-interactiva');
+            elementoFoto.title = 'Toca para ver las estadísticas';
+            elementoFoto.onclick = evento => {
+                evento.stopPropagation();
+                abrirModalEstadisticas(jugador);
+            };
+        }
+
+        function crearBotonEliminarInvitado(jugador) {
+            const boton = document.createElement('button');
+            boton.className = 'boton-eliminar-invitado';
+            boton.type = 'button';
+            boton.setAttribute('aria-label', `Eliminar a ${jugador.nombre} de la planilla`);
+            boton.title = `Eliminar a ${jugador.nombre} de la planilla`;
+            boton.textContent = '×';
+            boton.addEventListener('click', evento => {
+                evento.stopPropagation();
+                eliminarJugadorInvitado(jugador.id);
+            });
+            return boton;
+        }
+
+        function abrirModalInvitados() {
+            contCategoriasInvitados.replaceChildren();
+            contListaInvitados.replaceChildren();
+            contCategoriasInvitados.hidden = false;
+            mensajeInvitados.classList.remove('invitados-mensaje-subtitulo');
+            mensajeInvitados.textContent = 'Selecciona una categoría para ver sus jugadores.';
+            mensajeInvitados.hidden = false;
+            botonVolverInvitados.hidden = true;
+
+            categoriasInvitados.filter(categoria => categoria !== CATEGORIA_ACTUAL).forEach(categoria => {
+                const boton = document.createElement('button');
+                boton.className = 'invitados-categoria';
+                boton.type = 'button';
+                boton.textContent = categoria;
+                boton.addEventListener('click', () => cargarJugadoresInvitados(categoria));
+                contCategoriasInvitados.appendChild(boton);
+            });
+
+            modalInvitados.classList.add('abierto');
+            contCategoriasInvitados.querySelector('button')?.focus();
+        }
+
+        async function cargarJugadoresInvitados(categoria) {
+            contCategoriasInvitados.hidden = true;
+            contListaInvitados.replaceChildren();
+            botonVolverInvitados.hidden = false;
+            mensajeInvitados.hidden = false;
+            mensajeInvitados.classList.remove('invitados-mensaje-subtitulo');
+            mensajeInvitados.textContent = `Cargando jugadores de ${categoria}...`;
+
+            try {
+                const categoriaConDatosCompletos = ['U7', 'U9', 'U11', 'U15', 'U17', 'U19'].includes(categoria);
+                const columnasJugador = categoriaConDatosCompletos
+                    ? 'id_jugador,nombre,dorsal,posicion,anio_nacimiento,foto'
+                    : 'id_jugador,nombre';
+                const { data, error } = await _supabase
+                    .from(`Estadísticas_${categoria}`)
+                    .select(columnasJugador)
+                    .order('nombre');
+
+                if (error) throw error;
+
+                const jugadores = (data || []).filter(jugador => jugador.id_jugador !== null && jugador.nombre);
+                if (jugadores.length === 0) {
+                    mensajeInvitados.textContent = `No hay jugadores disponibles en ${categoria}.`;
+                    return;
+                }
+
+                const ordenPosicionesInvitados = { POR: 1, DEF: 2, MED: 3, OFE: 4 };
+                jugadores.sort((a, b) => {
+                    const ordenA = ordenPosicionesInvitados[String(a.posicion || '').trim().toUpperCase()] || 99;
+                    const ordenB = ordenPosicionesInvitados[String(b.posicion || '').trim().toUpperCase()] || 99;
+                    if (ordenA !== ordenB) return ordenA - ordenB;
+
+                    const anioA = Number(a.anio_nacimiento);
+                    const anioB = Number(b.anio_nacimiento);
+                    const tieneAnioA = a.anio_nacimiento !== null && a.anio_nacimiento !== undefined && a.anio_nacimiento !== '' && Number.isFinite(anioA);
+                    const tieneAnioB = b.anio_nacimiento !== null && b.anio_nacimiento !== undefined && b.anio_nacimiento !== '' && Number.isFinite(anioB);
+                    if (tieneAnioA !== tieneAnioB) return tieneAnioA ? -1 : 1;
+                    if (tieneAnioA && anioA !== anioB) return anioA - anioB;
+
+                    return String(a.nombre).localeCompare(String(b.nombre), 'es');
+                });
+
+                mensajeInvitados.textContent = `Jugadores de ${categoria}:`;
+                mensajeInvitados.classList.add('invitados-mensaje-subtitulo');
+                jugadores.forEach(jugador => {
+                    const idInvitado = `invitado:${categoria}:${jugador.id_jugador}`;
+                    const yaAnadido = baseDeDatosJugadores.some(item => item.id === idInvitado);
+                    const boton = document.createElement('button');
+                    boton.className = 'invitado-opcion';
+                    boton.type = 'button';
+
+                    const contenedorFoto = document.createElement('span');
+                    contenedorFoto.className = `invitado-opcion-foto${jugador.foto ? '' : ' sin-foto'}`;
+                    if (jugador.foto) {
+                        const imagen = document.createElement('img');
+                        imagen.src = jugador.foto;
+                        imagen.alt = `Foto de ${jugador.nombre}`;
+                        imagen.onerror = () => {
+                            contenedorFoto.classList.add('sin-foto');
+                            imagen.remove();
+                        };
+                        contenedorFoto.appendChild(imagen);
+                    } else {
+                        contenedorFoto.setAttribute('role', 'img');
+                        contenedorFoto.setAttribute('aria-label', `Sin foto de ${jugador.nombre}`);
+                    }
+
+                    const informacion = document.createElement('span');
+                    informacion.className = 'invitado-opcion-info';
+                    const nombre = document.createElement('span');
+                    nombre.className = 'invitado-opcion-nombre';
+                    nombre.textContent = jugador.nombre;
+                    informacion.appendChild(nombre);
+                    if (categoriaConDatosCompletos) {
+                        const detalle = document.createElement('small');
+                        detalle.className = 'invitado-opcion-detalle';
+                        detalle.textContent = `${jugador.posicion || '-'} | ${jugador.anio_nacimiento ?? '-'}`;
+                        informacion.appendChild(detalle);
+                    }
+
+                    const estado = document.createElement('small');
+                    estado.className = 'invitado-opcion-estado';
+                    estado.textContent = yaAnadido ? 'Añadido' : 'Añadir';
+                    boton.append(contenedorFoto, informacion, estado);
+                    boton.disabled = yaAnadido;
+                    if (!yaAnadido) {
+                        boton.addEventListener('click', () => {
+                            const dorsal = jugador.dorsal;
+                            baseDeDatosJugadores.push({
+                                id: idInvitado,
+                                dorsal: dorsal == null || String(dorsal).trim().toUpperCase() === 'NULL' || String(dorsal).trim() === ''
+                                    ? '-'
+                                    : dorsal,
+                                nombre: jugador.nombre,
+                                foto: jugador.foto || '',
+                                posicion: jugador.posicion || 'INV',
+                                anioNacimiento: jugador.anio_nacimiento ?? '',
+                                categoriaOrigen: categoria,
+                                sinEstadisticas: true
+                            });
+                            renderizarListas();
+                            cerrarModalInvitados();
+                        });
+                    }
+                    contListaInvitados.appendChild(boton);
+                });
+            } catch (error) {
+                console.error(`Error al cargar jugadores de ${categoria}:`, error.message);
+                mensajeInvitados.classList.remove('invitados-mensaje-subtitulo');
+                mensajeInvitados.textContent = `No se pudo cargar ${categoria}. Comprueba que exista la tabla Estadísticas_${categoria} con las columnas id_jugador y nombre${['U7', 'U9', 'U11', 'U15', 'U17', 'U19'].includes(categoria) ? ', dorsal, posicion, anio_nacimiento y foto' : ''}.`;
+            }
+        }
+
+        function volverACategoriasInvitados() {
+            contCategoriasInvitados.hidden = false;
+            contListaInvitados.replaceChildren();
+            mensajeInvitados.classList.remove('invitados-mensaje-subtitulo');
+            mensajeInvitados.textContent = 'Selecciona una categoría para ver sus jugadores.';
+            botonVolverInvitados.hidden = true;
+        }
+
+        function cerrarModalInvitados(evento) {
+            if (evento && evento.target !== modalInvitados) return;
+            modalInvitados.classList.remove('abierto');
+        }
+
+        function renderizarListas() {
+            contDisponibles.innerHTML = '';
+            contSeleccionados.innerHTML = '';
+            const contadorDisponibles = document.getElementById('contador-disponibles');
+            const torneoSeleccionado = hayTorneoSeleccionado();
+            panelPlantilla.classList.toggle('torneo-seleccionado', torneoSeleccionado);
+
+            if (!torneoSeleccionado) {
+                convocadosIds = [];
+                contadorDisponibles.innerText = '0';
+                actualizarResumenPosicionesConvocados([]);
+                actualizarContador();
+                return;
+            }
+
+            const idsBloqueados = obtenerIdsBloqueados();
+            const idsOcultos = obtenerIdsOcultos();
+            contadorDisponibles.innerText = String(baseDeDatosJugadores.filter(jugador =>
+                !idsBloqueados.includes(jugador.id) && !idsOcultos.includes(jugador.id)
+            ).length);
+
+            convocadosIds = convocadosIds.filter(id => !idsBloqueados.includes(id) && !idsOcultos.includes(id));
+
+            // 1. Renderizar Cartas de Disponibles
+            const jugadoresDisponibles = baseDeDatosJugadores
+                .filter(jugador => !convocadosIds.includes(jugador.id) && !idsOcultos.includes(jugador.id))
+                .sort(compararJugadores);
+
+            jugadoresDisponibles.forEach(jugador => {
+                    const carta = document.createElement('div');
+                    const estaBloqueado = idsBloqueados.includes(jugador.id);
+                    carta.className = estaBloqueado ? 'carta-jugador bloqueado' : 'carta-jugador';
+                    if (!estaBloqueado) {
+                        carta.onclick = evento => agregarJugador(jugador.id, evento);
+                    }
+                    
+                    const etiquetaBloqueado = estaBloqueado ? '<div class="carta-bloqueado">No disponible</div>' : '';
+                    const textoDorsal = obtenerTextoDorsal(jugador);
+                    carta.innerHTML = `
+                        <div class="carta-posicion">${jugador.posicion}</div>
+                        ${etiquetaBloqueado}
+                        <div class="carta-foto${jugador.foto ? '' : ' sin-foto'}" aria-label="Foto de ${jugador.nombre}">
+                            ${jugador.foto ? `<img src="${jugador.foto}" alt="Foto de ${jugador.nombre}" onerror="this.parentElement.classList.add('sin-foto');this.remove()">` : ''}
+                        </div>
+                        <div class="carta-nombre" title="${jugador.nombre}">${jugador.nombre}</div>
+                        <div class="carta-anio">${jugador.anioNacimiento}</div>
+                        <div class="carta-dorsal">${textoDorsal}</div>
+                    `;
+                    hacerFotoInteractiva(carta.querySelector('.carta-foto'), jugador, !estaBloqueado);
+                        if (jugador.categoriaOrigen) {
+                        carta.appendChild(crearBotonEliminarInvitado(jugador));
+                        }
+                    carta.title = estaBloqueado ? 'Jugador bloqueado para este torneo' : 'Toque para convocar';
+                    contDisponibles.appendChild(carta);
+            });
+
+                    const cartaAnadir = document.createElement('button');
+                    cartaAnadir.className = 'carta-jugador carta-anadir';
+                    cartaAnadir.type = 'button';
+                    cartaAnadir.setAttribute('aria-label', 'Añadir jugador de otra categoría');
+                    cartaAnadir.innerHTML = '<span class="carta-foto carta-foto-anadir" aria-hidden="true">+</span><span class="carta-nombre">Añadir</span>';
+                    cartaAnadir.addEventListener('click', abrirModalInvitados);
+                    contDisponibles.appendChild(cartaAnadir);
+
+            const jugadoresConvocados = baseDeDatosJugadores
+                .filter(jugador => convocadosIds.includes(jugador.id))
+                .sort(compararJugadores);
+
+            jugadoresConvocados.forEach(jugador => {
+                const div = document.createElement('div');
+                div.className = 'jugador-convocado';
+                div.innerHTML = `
+                    <div class="convocado-foto${jugador.foto ? '' : ' sin-foto'}" aria-label="Foto de ${jugador.nombre}">
+                        ${jugador.foto ? `<img src="${jugador.foto}" alt="Foto de ${jugador.nombre}" onerror="this.parentElement.classList.add('sin-foto');this.remove()">` : ''}
+                    </div>
+                    <div class="convocado-nombre" title="${jugador.nombre}">${jugador.nombre}</div>
+                `;
+                hacerFotoInteractiva(div.querySelector('.convocado-foto'), jugador);
+                div.title = 'Toca para quitar de la convocatoria';
+                div.onclick = () => quitarJugador(jugador.id);
+                contSeleccionados.appendChild(div);
+            });
+
+            actualizarResumenPosicionesConvocados(jugadoresConvocados);
+            actualizarContador();
+        }
+
+        function agregarJugador(idJugador, evento) {
+            const limite = obtenerLimiteCuposNormalizado();
+
+            if (convocadosIds.length >= limite) {
+                mostrarAdvertencia('Has alcanzado el límite de cupos');
+                return;
+            }
+
+            if (evento && evento.currentTarget) {
+                const carta = evento.currentTarget;
+
+                // 1. Anadimos la clase que encoge la carta y muestra el check dorado
+                carta.classList.add('seleccionado-check');
+
+                // 2. Esperamos 400ms para que el usuario vea la animacion antes de recargar la lista
+                setTimeout(() => {
+                    convocadosIds.push(idJugador);
+                    renderizarListas();
+                }, 400);
+            } else {
+                convocadosIds.push(idJugador);
+                renderizarListas();
+            }
+        }
+
+        function quitarJugador(idJugador) {
+            convocadosIds = convocadosIds.filter(id => id !== idJugador);
+            renderizarListas();
+        }
+
+        function eliminarJugadorInvitado(idJugador) {
+            convocadosIds = convocadosIds.filter(id => id !== idJugador);
+            const indice = baseDeDatosJugadores.findIndex(jugador => jugador.id === idJugador);
+            if (indice !== -1) {
+                baseDeDatosJugadores.splice(indice, 1);
+            }
+            renderizarListas();
+        }
+
+        function vaciarListaConvocados() {
+            if (convocadosIds.length === 0) {
+                return;
+            }
+
+            convocadosIds = [];
+            renderizarListas();
+        }
+
+        function abrirConfirmacionVaciado() {
+            if (convocadosIds.length === 0) {
+                return;
+            }
+            modalConfirmacionVaciado.classList.add('abierto');
+            botonCancelarVaciado.focus();
+        }
+
+        function cerrarConfirmacionVaciado(evento) {
+            if (evento && evento.target !== modalConfirmacionVaciado) {
+                return;
+            }
+            if (!modalConfirmacionVaciado.classList.contains('abierto')) {
+                return;
+            }
+            modalConfirmacionVaciado.classList.remove('abierto');
+            botonVaciarLista.focus();
+        }
+
+        function confirmarVaciadoLista() {
+            cerrarConfirmacionVaciado();
+            vaciarListaConvocados();
+        }
+
+        function actualizarTorneo() {
+            const torneoActual = selectTorneo.value;
+            document.getElementById('texto-torneo').innerText = torneoActual || TEXTO_TORNEO_PLACEHOLDER;
+            textoTorneoSeleccionado.innerText = selectTorneo.selectedOptions[0].textContent;
+            opcionesTorneo.forEach(opcion => {
+                opcion.setAttribute('aria-selected', String(opcion.dataset.value === torneoActual));
+            });
+
+            if (torneoActual) {
+                opcionTorneoPlaceholder.disabled = true;
+            }
+
+            renderizarListas();
+        }
+
+        function cerrarMenuTorneos(enfocarBoton = false) {
+            selectorTorneo.classList.remove('abierto');
+            botonSelectorTorneo.setAttribute('aria-expanded', 'false');
+            menuTorneos.setAttribute('aria-hidden', 'true');
+            opcionesTorneo.forEach(opcion => opcion.tabIndex = -1);
+            if (enfocarBoton) {
+                botonSelectorTorneo.focus();
+            }
+        }
+
+        function abrirMenuTorneos(posicionInicial = 'seleccionada') {
+            actualizarConteosTorneo();
+            selectorTorneo.classList.add('abierto');
+            botonSelectorTorneo.setAttribute('aria-expanded', 'true');
+            menuTorneos.setAttribute('aria-hidden', 'false');
+            opcionesTorneo.forEach(opcion => opcion.tabIndex = 0);
+            const indiceSeleccionado = opcionesTorneo.findIndex(opcion => opcion.dataset.value === selectTorneo.value);
+            const indiceInicial = posicionInicial === 'ultima'
+                ? opcionesTorneo.length - 1
+                : indiceSeleccionado >= 0 && posicionInicial === 'seleccionada' ? indiceSeleccionado : 0;
+            opcionesTorneo[indiceInicial].focus();
+        }
+
+        botonSelectorTorneo.addEventListener('click', () => {
+            if (selectorTorneo.classList.contains('abierto')) {
+                cerrarMenuTorneos();
+            } else {
+                abrirMenuTorneos();
+            }
+        });
+
+        botonSelectorTorneo.addEventListener('keydown', evento => {
+            if (evento.key === 'ArrowDown' || evento.key === 'ArrowUp') {
+                evento.preventDefault();
+                abrirMenuTorneos(evento.key === 'ArrowUp' ? 'ultima' : 'primera');
+            } else if (evento.key === 'Escape' && selectorTorneo.classList.contains('abierto')) {
+                cerrarMenuTorneos(true);
+            }
+        });
+
+        menuTorneos.addEventListener('click', evento => {
+            const opcion = evento.target.closest('.selector-torneo-opcion');
+            if (!opcion) {
+                return;
+            }
+            selectTorneo.value = opcion.dataset.value;
+            actualizarTorneo();
+            cerrarMenuTorneos(true);
+        });
+
+        menuTorneos.addEventListener('keydown', evento => {
+            const indiceActual = opcionesTorneo.indexOf(evento.target.closest('.selector-torneo-opcion'));
+            if (indiceActual < 0) {
+                return;
+            }
+            let indiceSiguiente = indiceActual;
+            if (evento.key === 'ArrowDown') {
+                indiceSiguiente = (indiceActual + 1) % opcionesTorneo.length;
+            } else if (evento.key === 'ArrowUp') {
+                indiceSiguiente = (indiceActual - 1 + opcionesTorneo.length) % opcionesTorneo.length;
+            } else if (evento.key === 'Home') {
+                indiceSiguiente = 0;
+            } else if (evento.key === 'End') {
+                indiceSiguiente = opcionesTorneo.length - 1;
+            } else if (evento.key === 'Escape') {
+                evento.preventDefault();
+                cerrarMenuTorneos(true);
+                return;
+            } else {
+                return;
+            }
+            evento.preventDefault();
+            opcionesTorneo[indiceSiguiente].focus();
+        });
+
+        selectorTorneo.addEventListener('focusout', evento => {
+            if (!selectorTorneo.contains(evento.relatedTarget)) {
+                cerrarMenuTorneos();
+            }
+        });
+
+        document.addEventListener('click', evento => {
+            if (!selectorTorneo.contains(evento.target)) {
+                cerrarMenuTorneos();
+            }
+        });
+
+        function actualizarAlturaLienzoConvocatoria() {
+            const limite = obtenerLimiteCuposNormalizado();
+            const columnas = 2;
+            const filas = Math.ceil(limite / columnas);
+            const alturaEncabezado = 180;
+            const alturaFila = 54;
+            const alturaCalculada = alturaEncabezado + (filas * alturaFila);
+            const alturaFinal = Math.max(400, alturaCalculada);
+            document.documentElement.style.setProperty('--alto-lienzo-convocatoria', `${alturaFinal}px`);
+        }
+
+        function actualizarContador() {
+            actualizarAlturaLienzoConvocatoria();
+            const limite = obtenerLimiteCuposNormalizado();
+            const cantidad = convocadosIds.length;
+            const texto = document.getElementById('contador-texto');
+            texto.innerText = `${cantidad} / ${limite}`;
+            texto.style.color = (cantidad > limite) ? 'red' : 'var(--dorado)';
+
+            // === NUEVA LOGICA DE LA BARRA DE PROGRESO ===
+            const barraProgreso = document.getElementById('barraProgreso');
+            if (barraProgreso) {
+                const porcentaje = Math.min(100, (cantidad / limite) * 100);
+                barraProgreso.style.width = `${porcentaje}%`;
+
+                if (cantidad === limite) {
+                    barraProgreso.classList.add('completa');
+                } else {
+                    barraProgreso.classList.remove('completa');
+                }
+            }
+
+            const convocatoriaCompleta = hayTorneoSeleccionado() && cantidad === limite;
+            botonDescargar.disabled = !convocatoriaCompleta;
+            if (botonVaciarLista) {
+                botonVaciarLista.disabled = cantidad === 0;
+            }
+        }
+
+        async function descargarConvocatoriaPNG() {
+            if (!window.html2canvas) {
+                mostrarAdvertencia('No se pudo cargar la librería de exportación.');
+                return;
+            }
+
+            try {
+                botonDescargar.disabled = true;
+                botonDescargar.innerText = 'Descargando...';
+
+                const anchoCaptura = 1100;
+                const canvas = await html2canvas(lienzoPrincipal, {
+                    backgroundColor: null,
+                    scale: 2,
+                    useCORS: true,
+                    allowTaint: true,
+                    width: anchoCaptura,
+                    windowWidth: 1200,
+                    windowHeight: 1200,
+                    scrollX: 0,
+                    scrollY: 0,
+                    onclone: documentoClonado => {
+                        const lienzoClonado = documentoClonado.getElementById('lienzo');
+                        if (!lienzoClonado) {
+                            return;
+                        }
+                        lienzoClonado.style.setProperty('width', `${anchoCaptura}px`, 'important');
+                        lienzoClonado.style.setProperty('max-width', 'none', 'important');
+                        lienzoClonado.style.height = 'auto';
+                        lienzoClonado.style.minHeight = '0';
+                        lienzoClonado.style.overflow = 'visible';
+
+                        const listaClonada = documentoClonado.getElementById('lista-seleccionados');
+                        if (listaClonada) {
+                            listaClonada.style.setProperty('grid-template-columns', 'repeat(3, minmax(0, 1fr))', 'important');
+                            listaClonada.style.setProperty('gap', '12px', 'important');
+
+                            listaClonada.querySelectorAll('.jugador-convocado').forEach(tarjeta => {
+                                tarjeta.style.setProperty('display', 'grid', 'important');
+                                tarjeta.style.setProperty('grid-template-columns', '36px minmax(0, 1fr)', 'important');
+                                tarjeta.style.setProperty('grid-template-rows', 'auto', 'important');
+                                tarjeta.style.setProperty('align-items', 'center', 'important');
+                                tarjeta.style.setProperty('column-gap', '10px', 'important');
+                                tarjeta.style.setProperty('min-height', '54px', 'important');
+                                tarjeta.style.setProperty('padding', '7px 10px', 'important');
+                                tarjeta.style.setProperty('text-align', 'left', 'important');
+
+                                const foto = tarjeta.querySelector('.convocado-foto');
+                                const nombre = tarjeta.querySelector('.convocado-nombre');
+                                if (foto) {
+                                    foto.style.setProperty('grid-row', '1', 'important');
+                                }
+                                if (nombre) {
+                                    nombre.style.setProperty('grid-column', '2', 'important');
+                                    nombre.style.setProperty('grid-row', '1', 'important');
+                                }
+                            });
+                        }
+
+                        const contadorClonado = documentoClonado.getElementById('contador-exportacion');
+                        if (contadorClonado) {
+                            const totalConvocados = listaClonada?.querySelectorAll('.jugador-convocado').length || 0;
+                            contadorClonado.textContent = `${totalConvocados} jugadores`;
+                            contadorClonado.style.display = 'inline-flex';
+                        }
+
+                        const altoCaptura = Math.ceil(Math.max(lienzoClonado.offsetHeight, lienzoClonado.scrollHeight));
+                        lienzoClonado.style.height = `${altoCaptura}px`;
+                    }
+                });
+
+                const torneo = (selectTorneo.value || 'sin-torneo')
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, '-')
+                    .replace(/^-+|-+$/g, '');
+                const fecha = new Date().toISOString().slice(0, 10);
+                const enlace = document.createElement('a');
+                enlace.href = canvas.toDataURL('image/png');
+                enlace.download = `convocatoria-u13-${torneo}-${fecha}.png`;
+                enlace.click();
+            } catch (error) {
+                mostrarAdvertencia('No fue posible descargar la imagen en este momento.');
+            } finally {
+                botonDescargar.innerText = 'Descargar PNG';
+                actualizarContador();
+            }
+        }
+
+        const scrollProgress = document.getElementById('scroll-progress');
+
+        function updateScrollProgress() {
+            if (!scrollProgress) {
+                return;
+            }
+
+            const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+            const scrollRatio = scrollHeight > 0 ? window.scrollY / scrollHeight : 0;
+            scrollProgress.style.width = `${scrollRatio * 100}%`;
+        }
+
+        window.addEventListener('scroll', updateScrollProgress);
+        window.addEventListener('resize', updateScrollProgress);
+
+        setTimeout(updateScrollProgress, 500);
+
+        window.onload = async () => {
+            await cargarFotosJugadoresU13();
+            renderizarListas();
+            updateScrollProgress();
+            document.addEventListener('keydown', (evento) => {
+                if (evento.key === 'Escape') {
+                    cerrarModalAdvertencia();
+                    cerrarModalEstadisticas();
+                    cerrarConfirmacionVaciado();
+                    cerrarModalInvitados();
+                    cerrarModalAyuda();
+                }
+            });
+        };
+    </script>
+</body>
+</html>
