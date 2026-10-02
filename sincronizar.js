@@ -64,6 +64,14 @@ function formatearFechaDDMMYYYY(valorExcel) {
     return `${dia}/${mes}/${anio}`;
 }
 
+function obtenerDiaUTC(fecha) {
+    return Date.UTC(fecha.getUTCFullYear(), fecha.getUTCMonth(), fecha.getUTCDate());
+}
+
+function esFechaIgualOPosterior(fecha, fechaLimite) {
+    return obtenerDiaUTC(fecha) >= obtenerDiaUTC(fechaLimite);
+}
+
 async function sincronizarU13() {
     try {
         const urlExcelEnLinea = 'https://docs.google.com/spreadsheets/d/1gpY4TcpxmBebSk9Popp5IK7tYVriTTT-/export?format=xlsx';
@@ -234,21 +242,19 @@ async function sincronizarU13() {
             const fechaInscripcion = parsearFechaExcel(fila[indiceFechaInscripcion]);
             const limitarPorInscripcion = fechaInscripcion
                 && fechaInscripcion.getUTCFullYear() >= 2026;
-            const fechaPermitida = fecha => !limitarPorInscripcion || fecha >= fechaInscripcion;
+            const fechaPermitida = fecha => !limitarPorInscripcion || esFechaIgualOPosterior(fecha, fechaInscripcion);
+            const esDiaInscripcion = fecha => limitarPorInscripcion
+                && obtenerDiaUTC(fecha) === obtenerDiaUTC(fechaInscripcion);
             const obtenerValorAnual = indice => {
                 const valor = fila[indice];
                 return valor !== undefined && valor !== null && String(valor).trim() !== '' ? valor : 0;
             };
             const entrenamientosDelJugador = columnasEntrenamientos.filter(item =>
                 fechaPermitida(item.fecha)
-                && obtenerMarcaEntrenamiento(fila[item.colIndex]) !== null
+                && (obtenerMarcaEntrenamiento(fila[item.colIndex]) !== null || esDiaInscripcion(item.fecha))
             );
-            const entrenamientosAsistidos = entrenamientosDelJugador.filter(item =>
-                obtenerMarcaEntrenamiento(fila[item.colIndex]) === 1
-            ).length;
-            const totalEntrenamientos = limitarPorInscripcion
-                ? entrenamientosDelJugador.length
-                : obtenerValorAnual(indiceEntrenamientosOfrecidos);
+            const entrenamientosAsistidos = obtenerValorAnual(indiceEntrenamientosCumplidos);
+            const totalEntrenamientos = obtenerValorAnual(indiceEntrenamientosOfrecidos);
 
             const partidosDelJugador = columnasPartidos.filter(item =>
                 fechaPermitida(item.fecha)
@@ -275,7 +281,7 @@ async function sincronizarU13() {
 
                 return {
                     fecha: `${dia}-${mes}`,
-                    asistio: marca
+                    asistio: marca === null && esDiaInscripcion(item.fecha) ? 0 : marca
                 };
             });
             while (ultimasFechasData.length < 5) {
